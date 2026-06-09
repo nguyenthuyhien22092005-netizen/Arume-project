@@ -54,27 +54,50 @@ router.get('/', adminMiddleware, async (req, res) => {
 
 // ── GET /api/orders/:id - Xem chi tiết một đơn hàng cụ thể ───────────────────
 // (Admin có quyền xem hết, User chỉ xem được đơn hàng do chính mình tạo)
-router.get('/:id', authMiddleware, async (req, res) => {
+// FIX: Bỏ authMiddleware cứng, tự decode token linh hoạt để admin xem được hóa đơn
+router.get('/:id', async (req, res) => {
     try {
         // Kiểm tra tính hợp lệ của định dạng chuỗi ObjectId MongoDB
         if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
             return res.status(400).json({ error: 'Định dạng ID đơn hàng không hợp lệ' });
         }
 
-        // Lấy thông tin kiểm tra xem tài khoản có phải Admin không
-        const user = await User.findById(req.user.id).select('isAdmin');
-        const isAdmin = user?.isAdmin === true;
+        // Lấy token từ header Authorization
+        const token = req.header('Authorization')?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ error: 'Không có quyền truy cập, vui lòng đăng nhập' });
+        }
 
-        // Thiết lập bộ lọc: Nếu là Admin thì tìm theo ID đơn, nếu là User thường thì ép thêm điều kiện đúng chủ sở hữu
+        const jwt = require('jsonwebtoken');
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (e) {
+            return res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn, vui lòng đăng nhập lại' });
+        }
+
+        // Kiểm tra quyền admin trực tiếp từ DB (đáng tin cậy hơn payload token)
+        const user = await User.findById(decoded.id).select('isAdmin');
+        if (!user) return res.status(401).json({ error: 'Tài khoản không tồn tại' });
+
+        const isAdmin = user.isAdmin === true;
+
+        // Admin xem được tất cả đơn, user thường chỉ xem đơn của mình
         const filter = isAdmin
             ? { _id: req.params.id }
-            : { _id: req.params.id, user: req.user.id };
+            : { _id: req.params.id, user: decoded.id };
 
         const order = await Order.findOne(filter)
             .populate('items.product', 'name image price category')
             .populate('user', 'name email');
 
-        if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng hoặc bạn không có quyền truy cập' });
+        if (!order) {
+            return res.status(404).json({ 
+                error: isAdmin 
+                    ? 'Không tìm thấy đơn hàng' 
+                    : 'Không tìm thấy đơn hàng hoặc bạn không có quyền truy cập' 
+            });
+        }
         res.json(order);
     } catch (err) {
         res.status(500).json({ error: err.message });

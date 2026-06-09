@@ -56,6 +56,14 @@ export const InvoicePage = () => {
       try {
         setLoading(true);
         setError('');
+
+        // Kiểm tra token trước khi gọi API
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Bạn chưa đăng nhập. Vui lòng đăng nhập để xem hóa đơn.');
+          setLoading(false);
+          return;
+        }
         
         // Gọi hàm getOrderById đã tích hợp interceptor token tự động
         const res = await getOrderById(orderId);
@@ -67,7 +75,16 @@ export const InvoicePage = () => {
         }
       } catch (err) {
         console.error("Lỗi lấy thông tin hóa đơn:", err);
-        setError(err.response?.data?.error || err.response?.data?.message || 'Không tìm thấy đơn hàng hoặc bạn không có quyền xem');
+        const status = err.response?.status;
+        if (status === 401) {
+          setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại rồi thử.');
+        } else if (status === 403) {
+          setError('Bạn không có quyền xem hóa đơn này.');
+        } else if (status === 404) {
+          setError('Không tìm thấy đơn hàng.');
+        } else {
+          setError(err.response?.data?.error || err.response?.data?.message || 'Có lỗi xảy ra khi tải hóa đơn');
+        }
       } finally {
         setLoading(false);
       }
@@ -106,8 +123,12 @@ export const InvoicePage = () => {
     <div className="min-h-screen bg-[#F9F7F2] flex items-center justify-center pt-32">
       <div className="text-center px-4">
         <Package size={48} className="mx-auto text-gray-300 mb-4" />
-        <p className="text-gray-600 mb-6">{error || 'Không tìm thấy dữ liệu đơn hàng'}</p>
-        <Link to="/profile" className="text-sm underline underline-offset-4 text-[#C9A96E]">← Quay lại đơn hàng của tôi</Link>
+        <p className="text-gray-600 mb-2">{error || 'Không tìm thấy dữ liệu đơn hàng'}</p>
+        <p className="text-xs text-gray-400 mb-6">Mã đơn: {orderId}</p>
+        <div className="flex flex-col items-center gap-3">
+          <Link to="/profile" className="text-sm underline underline-offset-4 text-[#C9A96E]">← Quay lại đơn hàng của tôi</Link>
+          <Link to="/" className="text-xs text-gray-400 hover:text-gray-600">Về trang chủ</Link>
+        </div>
       </div>
     </div>
   );
