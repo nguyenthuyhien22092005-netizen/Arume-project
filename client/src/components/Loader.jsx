@@ -1,10 +1,91 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function Loader() {
   const canvasRef = useRef(null)
+  const [slideY, setSlideY] = useState(0)
+  const [dismissed, setDismissed] = useState(false)
+  const [isFirstTime, setIsFirstTime] = useState(true) // Kiểm tra xem có phải lần đầu mở web không
+  const slideRef = useRef(0)      // persistent across re-renders
+  const dismissedRef = useRef(false)
+
+  // Kiểm tra localStorage ngay khi component mount
+  useEffect(() => {
+    const hasSeenLoader = localStorage.getItem('hasSeenArumeLoader')
+    if (hasSeenLoader) {
+      setIsFirstTime(false)
+      setDismissed(true)
+      dismissedRef.current = true
+    }
+  }, [])
+
+  // Hàm xử lý khi Loader hoàn tất biến mất
+  const handleDismiss = () => {
+    if (dismissedRef.current) return
+    dismissedRef.current = true
+    setDismissed(true)
+    setSlideY(100)
+    localStorage.setItem('hasSeenArumeLoader', 'true') // Lưu vào bộ nhớ máy để lần sau không hiện lại
+  }
+
+  // Hàm xử lý khi người dùng NHẤP CHUỘT vào màn hình
+  const handleLoaderClick = () => {
+    handleDismiss()
+  }
 
   useEffect(() => {
+    // Nếu không phải lần đầu mở trang thì không cần lắng nghe sự kiện cuộn
+    if (localStorage.getItem('hasSeenArumeLoader')) return;
+
+    let startY = null
+
+    const onWheel = (e) => {
+      if (dismissedRef.current) return
+      if (e.deltaY < 0) {
+        // cuộn lên → tăng slide (loader đi lên)
+        slideRef.current = Math.min(100, slideRef.current + Math.abs(e.deltaY) * 0.15)
+        setSlideY(slideRef.current)
+        if (slideRef.current >= 100) {
+          handleDismiss()
+        }
+      }
+    }
+
+    const onTouchStart = (e) => {
+      startY = e.touches[0].clientY
+    }
+
+    const onTouchMove = (e) => {
+      if (dismissedRef.current || startY === null) return
+      const dy = e.touches[0].clientY - startY
+      if (dy > 0) {
+        // ngón tay kéo xuống = scroll up = dismiss
+        slideRef.current = Math.min(100, slideRef.current + dy * 0.5)
+        setSlideY(slideRef.current)
+        if (slideRef.current >= 100) {
+          handleDismiss()
+        }
+      }
+      startY = e.touches[0].clientY
+    }
+
+    window.addEventListener('wheel', onWheel, { passive: true })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
+    return () => {
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
+    }
+  }, [])
+
+  // Canvas crystal animation
+  useEffect(() => {
+    // Nếu đã xem rồi thì không cần chạy animation canvas cho nhẹ máy
+    if (localStorage.getItem('hasSeenArumeLoader')) return;
+
     const canvas = canvasRef.current
+    if (!canvas) return
+
     const ctx = canvas.getContext('2d')
     const el = canvas.parentElement
     canvas.width = el.offsetWidth
@@ -25,12 +106,6 @@ export default function Loader() {
     const lerp = (a, b, t) => a + (b - a) * t
     const easeOut = t => 1 - Math.pow(1 - t, 3)
     const easeInOut = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
-
-    // tick chạy từ 0 → MAX_TICK, scroll điều khiển tốc độ & chiều
-    const MAX_TICK = 500
-    let tick = 0
-    let tickDir = 1  // 1 = tiến, -1 = lùi
-    let animId
 
     class Shard {
       constructor(id) {
@@ -93,69 +168,87 @@ export default function Loader() {
         }
         ctx.restore()
       }
-      update(t) {
-        if (t < this.delay) {
-          this.x = CX; this.y = CY; this.alpha = 0; this.size = 0.3
-          return
-        }
-        const tt = t - this.delay
-        if (tt < 80) {
-          const p = easeOut(tt / 80)
-          this.x = CX + this.vx * tt * 0.6; this.y = CY + this.vy * tt * 0.6
-          this.angle = this.vRot * tt; this.alpha = p * 0.82; this.size = 0.3 + p * 0.7
-        } else if (tt < 220) {
-          this.x = CX + this.vx * 80 * 0.6 + Math.sin(t * 0.018 + this.id) * 4
-          this.y = CY + this.vy * 80 * 0.6 + Math.cos(t * 0.014 + this.id * 0.7) * 3
-          this.angle = this.vRot * 80; this.alpha = 0.82; this.size = 1
-        } else if (tt < 360) {
-          const p = easeInOut((tt - 220) / 140)
-          this.x = lerp(CX + this.vx * 80 * 0.6, this.tx, p)
-          this.y = lerp(CY + this.vy * 80 * 0.6, this.ty, p)
-          this.angle = lerp(this.vRot * 80, 0, p)
+      update(tick) {
+        if (tick < this.delay) return
+        const t = tick - this.delay
+        if (t < 80) {
+          const p = easeOut(t / 80)
+          this.x = CX + this.vx * t * 0.6; this.y = CY + this.vy * t * 0.6
+          this.angle += this.vRot; this.alpha = p * 0.82; this.size = 0.3 + p * 0.7
+        } else if (t < 220) {
+          this.x += Math.sin(tick * 0.018 + this.id) * 0.18
+          this.y += Math.cos(tick * 0.014 + this.id * 0.7) * 0.15
+          this.angle += this.vRot * 0.12; this.alpha = 0.82; this.size = 1
+        } else if (t < 360) {
+          const p = easeInOut((t - 220) / 140)
+          this.x = lerp(this.x, this.tx, p * 0.08); this.y = lerp(this.y, this.ty, p * 0.08)
+          this.angle = lerp(this.angle, 0, p * 0.06)
           this.alpha = lerp(0.82, 0.35, p); this.size = lerp(1, 0.7, p)
         } else {
-          this.x = this.tx; this.y = this.ty; this.angle = 0
-          this.alpha = 0.22 + Math.sin(t * 0.04 + this.id) * 0.06; this.size = 0.7
+          this.x = lerp(this.x, this.tx, 0.04); this.y = lerp(this.y, this.ty, 0.04)
+          this.angle *= 0.97
+          this.alpha = 0.22 + Math.sin(tick * 0.04 + this.id) * 0.06; this.size = 0.7
         }
       }
       draw() { this._draw(this.x, this.y, this.angle, this.alpha, this.size) }
     }
 
+    class Splinter {
+      constructor() { this.reset() }
+      reset() {
+        const a = Math.random() * Math.PI * 2, speed = 1.5 + Math.random() * 4
+        this.x = CX + (Math.random() - 0.5) * 40; this.y = CY + (Math.random() - 0.5) * 40
+        this.vx = Math.cos(a) * speed; this.vy = Math.sin(a) * speed
+        this.len = 4 + Math.random() * 12; this.angle = a
+        this.alpha = 0.7 + Math.random() * 0.3
+        const roll = Math.random()
+        this.color = roll < 0.5 ? C.ice : roll < 0.8 ? C.frost : C.gold
+      }
+      update(tick) {
+        if (tick < 5 || tick > 60) return
+        this.x += this.vx; this.y += this.vy
+        this.vx *= 0.94; this.vy *= 0.94; this.alpha *= 0.93
+      }
+      draw(tick) {
+        if (tick < 5 || tick > 60 || this.alpha < 0.02) return
+        ctx.save(); ctx.globalAlpha = this.alpha
+        ctx.strokeStyle = this.color + '1)'; ctx.lineWidth = 0.8
+        ctx.beginPath(); ctx.moveTo(this.x, this.y)
+        ctx.lineTo(this.x - Math.cos(this.angle) * this.len, this.y - Math.sin(this.angle) * this.len)
+        ctx.stroke(); ctx.restore()
+      }
+    }
+
     class Mote {
       constructor() {
         this.x = Math.random() * W; this.y = Math.random() * H
-        this.r = 0.5 + Math.random() * 1.5
-        this.maxA = 0.08 + Math.random() * 0.18
+        this.r = 0.5 + Math.random() * 1.5; this.alpha = 0; this.alphaDir = 1
+        this.maxA = 0.08 + Math.random() * 0.18; this.speed = 0.003 + Math.random() * 0.006
         this.color = Math.random() < 0.6 ? C.ice : C.gold
-        this.offset = Math.random() * 1000
-        this.speed = 0.008 + Math.random() * 0.012
+        this.delay = Math.floor(Math.random() * 200)
       }
-      draw(t) {
-        const alpha = this.maxA * (0.5 + 0.5 * Math.sin((t + this.offset) * this.speed))
-        if (alpha < 0.01) return
-        ctx.save(); ctx.globalAlpha = alpha
+      update(tick) {
+        if (tick < this.delay) return
+        this.alpha += this.speed * this.alphaDir
+        if (this.alpha >= this.maxA) this.alphaDir = -1
+        if (this.alpha <= 0) { this.alphaDir = 1; this.x = Math.random() * W; this.y = Math.random() * H }
+      }
+      draw() {
+        if (this.alpha < 0.01) return
+        ctx.save(); ctx.globalAlpha = this.alpha
         ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2)
         ctx.fillStyle = this.color + '1)'; ctx.fill(); ctx.restore()
       }
     }
 
     const shards = Array.from({ length: 140 }, (_, i) => new Shard(i))
+    const splinters = Array.from({ length: 80 }, () => new Splinter())
     const motes = Array.from({ length: 60 }, () => new Mote())
-
-    // Shockwave chỉ vẽ khi tick gần 0
-    const drawShockwave = (t) => {
-      if (t > 80) return
-      const r1 = t * 6; const a1 = Math.max(0, 0.9 - t * 0.012)
-      const r2 = Math.max(0, t - 8) * 3.5; const a2 = Math.max(0, 0.6 - (t - 8) * 0.018)
-      if (a1 > 0.01) {
-        ctx.beginPath(); ctx.arc(CX, CY, r1, 0, Math.PI * 2)
-        ctx.strokeStyle = C.ice + a1 + ')'; ctx.lineWidth = 1.2; ctx.stroke()
-      }
-      if (t > 8 && a2 > 0.01) {
-        ctx.beginPath(); ctx.arc(CX, CY, r2, 0, Math.PI * 2)
-        ctx.strokeStyle = C.gold + a2 + ')'; ctx.lineWidth = 1.2; ctx.stroke()
-      }
-    }
+    let shockwaves = [
+      { r: 0, alpha: 0.9, speed: 6, color: C.ice },
+      { r: 0, alpha: 0.6, speed: 3.5, color: C.gold, delay: 8 },
+    ]
+    let tick = 0, animId
 
     const frame = () => {
       ctx.clearRect(0, 0, W, H)
@@ -163,90 +256,80 @@ export default function Loader() {
       bg.addColorStop(0, 'rgba(225,232,240,0.18)')
       bg.addColorStop(1, 'rgba(242,237,227,0)')
       ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
-
-      drawShockwave(tick)
-      motes.forEach(m => m.draw(tick))
+      shockwaves = shockwaves.filter(s => s.alpha > 0.01)
+      shockwaves.forEach(s => {
+        if (s.delay && s.delay > 0) { s.delay--; return }
+        s.r += s.speed; s.alpha *= 0.965; s.speed *= 0.98
+        ctx.beginPath(); ctx.arc(CX, CY, s.r, 0, Math.PI * 2)
+        ctx.strokeStyle = s.color + s.alpha + ')'; ctx.lineWidth = 1.2; ctx.stroke()
+      })
+      motes.forEach(m => { m.update(tick); m.draw() })
+      splinters.forEach(s => { s.update(tick); s.draw(tick) })
       shards.forEach(s => { s.update(tick); s.draw() })
-
-      // auto advance khi không scroll (idle)
-      tick = Math.max(0, Math.min(MAX_TICK, tick + tickDir))
-
-      // khi đến cuối thì dừng
-      if (tick >= MAX_TICK) tickDir = 0
-      if (tick <= 0) tickDir = 0
-
+      tick++
       animId = requestAnimationFrame(frame)
     }
-
-    // Bắt đầu chạy tự động
-    tickDir = 1
     animId = requestAnimationFrame(frame)
-
-    // Scroll điều khiển chiều & tốc độ
-    let scrollTimeout
-    const onWheel = (e) => {
-      e.preventDefault()
-      // deltaY > 0 = scroll xuống → chạy tới; deltaY < 0 = scroll lên → chạy lùi
-      const delta = e.deltaY * 0.4
-      tick = Math.max(0, Math.min(MAX_TICK, tick + delta))
-      tickDir = delta > 0 ? 1 : -1
-
-      // Sau 400ms không scroll thì dừng
-      clearTimeout(scrollTimeout)
-      scrollTimeout = setTimeout(() => { tickDir = 0 }, 400)
-    }
-
-    let touchStartY = null
-    const onTouchStart = (e) => { touchStartY = e.touches[0].clientY }
-    const onTouchMove = (e) => {
-      e.preventDefault()
-      if (touchStartY === null) return
-      const dy = touchStartY - e.touches[0].clientY  // kéo lên = tiến
-      tick = Math.max(0, Math.min(MAX_TICK, tick + dy * 0.8))
-      tickDir = dy > 0 ? 1 : -1
-      touchStartY = e.touches[0].clientY
-      clearTimeout(scrollTimeout)
-      scrollTimeout = setTimeout(() => { tickDir = 0 }, 400)
-    }
-
-    window.addEventListener('wheel', onWheel, { passive: false })
-    window.addEventListener('touchstart', onTouchStart, { passive: false })
-    window.addEventListener('touchmove', onTouchMove, { passive: false })
-    return () => {
-      cancelAnimationFrame(animId)
-      window.removeEventListener('wheel', onWheel)
-      window.removeEventListener('touchstart', onTouchStart)
-      window.removeEventListener('touchmove', onTouchMove)
-    }
+    return () => cancelAnimationFrame(animId)
   }, [])
+
+  // Nếu không phải lần đầu vào web, ẩn hoàn toàn không render HTML ra để tối ưu hiệu năng
+  if (!isFirstTime) return null
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap');
+
         .loader {
-          position: fixed; inset: 0; background: #F2EDE3;
-          display: flex; align-items: center; justify-content: center;
-          z-index: 999999; overflow: hidden;
+          position: fixed;
+          inset: 0;
+          background: #F2EDE3;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 999999;
+          overflow: hidden;
+          transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+          will-change: transform;
+          cursor: pointer; /* Thêm con trỏ dạng bấm để người dùng biết click được */
         }
-        .loader-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-        .loader-content { position: relative; z-index: 10; text-align: center; }
+        .loader.dismissed { 
+          pointer-events: none; 
+          transform: translateY(-100vh) !important; /* Đảm bảo ẩn hẳn lên trên */
+        }
+        .loader-canvas {
+          position: absolute; inset: 0; width: 100%; height: 100%;
+        }
+        .loader-content {
+          position: relative; z-index: 10; text-align: center;
+        }
         .loader-title {
-          font-family: 'Playfair Display', serif; font-style: italic;
-          font-size: clamp(72px, 11vw, 110px); font-weight: 700;
-          letter-spacing: 0.08em; line-height: 1;
-          opacity: 0; transform: scale(0.08);
+          font-family: 'Playfair Display', serif;
+          font-style: italic;
+          font-size: clamp(72px, 11vw, 110px);
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          line-height: 1;
+          opacity: 0;
+          transform: scale(0.08);
           animation: titleReveal 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
         }
         .title-aru {
           color: #C49A28;
-          text-shadow: 0 -1px 0 rgba(255,240,180,0.9), 0 1px 0 rgba(140,90,10,0.4),
-            0 3px 8px rgba(196,154,40,0.25), 0 0 40px rgba(196,154,40,0.15);
+          text-shadow:
+            0 -1px 0 rgba(255,240,180,0.9),
+            0  1px 0 rgba(140,90,10,0.4),
+            0  3px 8px rgba(196,154,40,0.25),
+            0  0 40px rgba(196,154,40,0.15);
         }
         .title-me {
           color: #A8C4D8;
-          text-shadow: 0 -1px 0 rgba(240,250,255,0.95), 0 1px 0 rgba(80,120,160,0.3),
-            0 3px 8px rgba(160,210,240,0.2), 0 0 40px rgba(200,230,248,0.2);
+          text-shadow:
+            0 -1px 0 rgba(240,250,255,0.95),
+            0  1px 0 rgba(80,120,160,0.3),
+            0  3px 8px rgba(160,210,240,0.2),
+            0  0 40px rgba(200,230,248,0.2);
         }
         .loader-line {
           width: 0; height: 1px;
@@ -273,20 +356,36 @@ export default function Loader() {
         }
         .loader-arrow {
           width: 1px; height: 32px;
-          background: linear-gradient(to bottom, rgba(196,154,40,0.65), transparent);
-          margin: 0 auto; animation: arrowPulse 1.5s ease-in-out 2.6s infinite;
+          background: linear-gradient(to top, rgba(196,154,40,0.65), transparent);
+          margin: 0 auto;
+          animation: arrowPulse 1.5s ease-in-out 2.6s infinite;
         }
         @keyframes titleReveal {
-          0% { opacity: 0; transform: scale(0.08); }
-          30% { opacity: 1; }
+          0%   { opacity: 0; transform: scale(0.08); }
+          30%  { opacity: 1; }
           100% { opacity: 1; transform: scale(1); }
         }
-        @keyframes taglineIn { to { opacity: 1; } }
+        @keyframes taglineIn  { to { opacity: 1; } }
         @keyframes lineExpand { to { width: 200px; } }
-        @keyframes arrowPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+        @keyframes arrowPulse {
+          0%, 100% { opacity: 0.35; }
+          50%      { opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .loader-title   { animation: none; opacity: 1; transform: scale(1); }
+          .loader-line    { animation: none; width: 200px; }
+          .loader-tagline { animation: none; opacity: 1; }
+          .loader-scroll-hint { animation: none; opacity: 1; }
+          .loader-arrow   { animation: none; }
+          .loader          { transition: none; }
+        }
       `}</style>
 
-      <div className="loader">
+      <div
+        className={`loader${dismissed ? ' dismissed' : ''}`}
+        style={{ transform: `translateY(-${slideY}vh)` }}
+        onClick={handleLoaderClick} // Thêm sự kiện click để tắt nhanh
+      >
         <canvas ref={canvasRef} className="loader-canvas" />
         <div className="loader-content">
           <h1 className="loader-title">
@@ -297,7 +396,7 @@ export default function Loader() {
           <p className="loader-tagline">Fine Jewelry · Est. 2024</p>
         </div>
         <div className="loader-scroll-hint">
-          <p>Cuộn để khám phá</p>
+          <p>Cuộn hoặc nhấp để khám phá</p>
           <div className="loader-arrow" />
         </div>
       </div>
