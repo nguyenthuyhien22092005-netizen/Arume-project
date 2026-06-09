@@ -26,9 +26,14 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Cho phép các request không có origin (như Postman, ứng dụng di động) 
-        // hoặc các origin nằm trong danh sách được định nghĩa trước
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Kiểm tra xem origin gửi tới có kết thúc bằng .vercel.app hay không
+        const isVercelDomain = origin && origin.endsWith('.vercel.app');
+
+        // Cho phép nếu:
+        // - Không có origin (ví dụ: Postman, công cụ test)
+        // - Hoặc origin nằm chính xác trong mảng allowedOrigins cố định
+        // - Hoặc origin là bất kỳ sub-domain nào từ hệ sinh thái Vercel (.vercel.app)
+        if (!origin || allowedOrigins.includes(origin) || isVercelDomain) {
             callback(null, true);
         } else {
             // Trả về false thay vì ném ra Error để tránh làm sập (crash) server Node.js trên Railway
@@ -59,5 +64,6 @@ app.listen(PORT, () => {
     console.log(`=== SERVER ARUME IS RUNNING ===`);
     console.log(`Port: ${PORT}`);
     console.log(`Allowed Origins:`, allowedOrigins);
+    console.log(`Dynamic CORS: Allowed all *.vercel.app domains`);
     console.log(`===============================`);
 });
