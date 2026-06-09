@@ -166,7 +166,7 @@ Truy cập: **http://localhost:5173**
 
 | Loại | Email | Mật khẩu |
 |---|---|---|
-| Admin | admin@arume.vn | admin123 |
+| Admin | admin@arume.vn | adminpassword123 |
 
 > Tài khoản khách hàng: đăng ký tự do qua giao diện web.
 
