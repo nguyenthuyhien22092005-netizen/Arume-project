@@ -1,0 +1,15 @@
+%% Use Case diagrams split into multiple files
+%% - usecase_guest.mmd
+%% - usecase_user.mmd
+%% - usecase_admin.mmd
+%% - usecase_payment.mmd
+
+graph TD
+        subgraph UseCaseIndex
+            GU[Guest & User diagrams]
+            AD[Admin diagram]
+            PM[Payment diagram]
+        end
+
+        GU --> AD
+        GU --> PM

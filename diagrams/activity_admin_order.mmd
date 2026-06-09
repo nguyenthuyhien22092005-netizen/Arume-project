@@ -1,0 +1,14 @@
+flowchart TD
+  start((Bắt đầu))
+  adminLogin["Admin đăng nhập"]
+  viewOrders["Xem danh sách đơn hàng"]
+  selectOrder["Chọn đơn hàng"]
+  updateStatus{Cập nhật trạng thái?}
+  pickStatus["Chọn trạng thái (Packed / Shipped / Delivered)"]
+  save["Lưu thay đổi"]
+  notifyCustomer["Gửi thông báo khách hàng"]
+  finish((Kết thúc))
+
+  start --> adminLogin --> viewOrders --> selectOrder --> updateStatus
+  updateStatus -- Không --> finish
+  updateStatus -- Có --> pickStatus --> save --> notifyCustomer --> finish
