@@ -1,73 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
 
-// BẬT/TẮT CHẾ ĐỘ THỬ NGHIỆM
-// true: Luôn hiện Loader mỗi khi F5 (phù hợp khi đang làm đồ án, sửa giao diện)
-// false: Chỉ hiện khi mở dự án lần đầu HOẶC khi quay về trang chủ (/)
-const ALWAYS_SHOW_FOR_TESTING = false
-
 export default function Loader() {
   const canvasRef = useRef(null)
   const [slideY, setSlideY] = useState(0)
   const [dismissed, setDismissed] = useState(false)
 
-  // Kiểm tra ngay lập tức để chặn render nếu không cần thiết
   const [isFirstTime] = useState(() => {
-    if (ALWAYS_SHOW_FOR_TESTING) return true
-    if (typeof window !== 'undefined') {
-      const isHome = window.location.pathname === '/'
-      const hasSeen = sessionStorage.getItem('hasSeenArumeLoader')
-      // Hiện nếu: chưa từng xem, HOẶC đang ở trang chủ (quay về / từ trang khác)
-      return !hasSeen || isHome
-    }
-    return false
+    if (typeof window === 'undefined') return false
+    return !localStorage.getItem('hasSeenArumeLoader')
   })
 
   const slideRef = useRef(0)
   const dismissedRef = useRef(false)
 
-  // Xóa flag khi người dùng rời trang chủ → lần sau về / sẽ hiện Loader lại
-  // Dùng popstate + click để bắt navigation trong React Router mà không cần useLocation
-  useEffect(() => {
-    const clearFlagIfNotHome = () => {
-      if (window.location.pathname !== '/') {
-        sessionStorage.removeItem('hasSeenArumeLoader')
-      }
-    }
-    window.addEventListener('popstate', clearFlagIfNotHome)
-    // Bắt cả click vào link nội bộ (React Router dùng history.pushState)
-    const origPush = history.pushState.bind(history)
-    history.pushState = (...args) => {
-      origPush(...args)
-      clearFlagIfNotHome()
-    }
-    return () => {
-      window.removeEventListener('popstate', clearFlagIfNotHome)
-      history.pushState = origPush
-    }
-  }, [])
-
-  // Hàm xử lý khi Loader hoàn tất biến mất
   const handleDismiss = () => {
     if (dismissedRef.current) return
     dismissedRef.current = true
     setDismissed(true)
     setSlideY(100)
-
-    if (!ALWAYS_SHOW_FOR_TESTING) {
-      sessionStorage.setItem('hasSeenArumeLoader', 'true')
-    }
+    localStorage.setItem('hasSeenArumeLoader', 'true')
   }
 
   // Tự động tắt loader sau 4.5 giây
   useEffect(() => {
     if (!isFirstTime) return
-    const autoDismissTimer = setTimeout(() => {
-      handleDismiss()
-    }, 4500)
-    return () => clearTimeout(autoDismissTimer)
+    const timer = setTimeout(() => handleDismiss(), 4500)
+    return () => clearTimeout(timer)
   }, [isFirstTime])
 
-  // Lắng nghe sự kiện Cuộn / Vuốt
+  // Lắng nghe Cuộn / Vuốt
   useEffect(() => {
     if (!isFirstTime) return
 
@@ -82,9 +43,7 @@ export default function Loader() {
       }
     }
 
-    const onTouchStart = (e) => {
-      startY = e.touches[0].clientY
-    }
+    const onTouchStart = (e) => { startY = e.touches[0].clientY }
 
     const onTouchMove = (e) => {
       if (dismissedRef.current || startY === null) return
@@ -301,7 +260,6 @@ export default function Loader() {
     return () => cancelAnimationFrame(animId)
   }, [isFirstTime])
 
-  // Nếu không cần hiện Loader, không render gì cả
   if (!isFirstTime) return null
 
   return (
