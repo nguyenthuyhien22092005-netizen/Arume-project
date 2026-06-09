@@ -10,6 +10,7 @@
 |---|---|
 | Nguyễn Thúy Hiền | Nhóm trưởng |
 | Lê Thị Dịu | Thành viên |
+| Phạm Thu Ngân | Thành viên |
 | Trần Thị Khánh Linh | Thành viên |
 | Nguyễn Ngọc Khánh Bình | Thành viên |
 
