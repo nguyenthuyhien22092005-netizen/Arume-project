@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+/* Nhúng font từ Google */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+@theme {
+  /* Định nghĩa font tùy chỉnh để Tailwind hiểu */
+  --font-sans: 'Montserrat', sans-serif;
+  --font-serif: 'Playfair Display', serif;
+}
+
+/* Áp dụng font mặc định cho toàn bộ trang */
+body {
+  font-family: var(--font-sans);
+  background-color: #ffffff;
+  color: #111111;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode global: đổi nền và chữ mặc định */
+html.dark body {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Đảm bảo các placeholder luôn thấy được */
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #6b7280;
+}
+
+/* Dark mode cho input mặc định */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: #f3f4f6;
+}
+
+/* Scrollbar đẹp cho dark mode */
+html.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
