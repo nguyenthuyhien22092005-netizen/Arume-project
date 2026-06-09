@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Printer, ArrowLeft, Package, CreditCard, Tag, CheckCircle, Clock, Truck, XCircle } from 'lucide-react';
-import API from '../api';
+// Import đúng hàm lấy chi tiết đơn hàng đã xuất từ file api ở trên
+import { getOrderById } from '../api';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const toVND = (usd) => Math.round(usd * 25000);
 const fmtVND = (n) => n?.toLocaleString('vi-VN') + ' ₫';
-const fmtDate = (d) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 
 const PAYMENT_LABELS = {
   cod: 'Thanh toán khi nhận hàng (COD)',
@@ -42,7 +43,7 @@ export const InvoicePage = () => {
   const invoiceRef = useRef(null);
 
   useEffect(() => {
-    // Inject print CSS một lần
+    // Inject print CSS một lần duy nhất
     const style = document.createElement('style');
     style.id = 'arume-print-style';
     style.textContent = PRINT_STYLE;
@@ -53,15 +54,28 @@ export const InvoicePage = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await API.get(`/orders/${orderId}`);
-        setOrder(res.data);
+        setLoading(true);
+        setError('');
+        
+        // Gọi hàm getOrderById đã tích hợp interceptor token tự động
+        const res = await getOrderById(orderId);
+        
+        if (res && res.data) {
+          setOrder(res.data);
+        } else {
+          setError('Hệ thống trả về dữ liệu trống');
+        }
       } catch (err) {
-        setError(err.response?.data?.error || 'Không tìm thấy đơn hàng');
+        console.error("Lỗi lấy thông tin hóa đơn:", err);
+        setError(err.response?.data?.error || err.response?.data?.message || 'Không tìm thấy đơn hàng hoặc bạn không có quyền xem');
       } finally {
         setLoading(false);
       }
     };
-    fetchOrder();
+
+    if (orderId) {
+      fetchOrder();
+    }
   }, [orderId]);
 
   const handlePrint = () => {
@@ -77,7 +91,6 @@ export const InvoicePage = () => {
 
     printDiv.innerHTML = invoiceRef.current.outerHTML;
     window.print();
-    // Không cần xóa — CSS ẩn nó sau khi print
   };
 
   if (loading) return (
@@ -89,11 +102,11 @@ export const InvoicePage = () => {
     </div>
   );
 
-  if (error) return (
+  if (error || !order) return (
     <div className="min-h-screen bg-[#F9F7F2] flex items-center justify-center pt-32">
-      <div className="text-center">
+      <div className="text-center px-4">
         <Package size={48} className="mx-auto text-gray-300 mb-4" />
-        <p className="text-gray-600 mb-6">{error}</p>
+        <p className="text-gray-600 mb-6">{error || 'Không tìm thấy dữ liệu đơn hàng'}</p>
         <Link to="/profile" className="text-sm underline underline-offset-4 text-[#C9A96E]">← Quay lại đơn hàng của tôi</Link>
       </div>
     </div>
@@ -101,7 +114,7 @@ export const InvoicePage = () => {
 
   const sm = STATUS_META[order.status] || STATUS_META['Đang xử lý'];
   const StatusIcon = sm.icon;
-  const subtotal = order.originalPrice || order.totalPrice;
+  const subtotal = order.originalPrice || order.totalPrice || 0;
 
   return (
     <div className="min-h-screen bg-[#F9F7F2] pt-24 pb-16">
@@ -144,23 +157,25 @@ export const InvoicePage = () => {
 
           <div className="px-8 py-6 space-y-6">
             {/* Customer + Shipping */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2">Khách hàng</p>
-                <p className="font-semibold text-gray-900 text-sm">{order.user?.name || order.shippingAddress?.name}</p>
+                <p className="font-semibold text-gray-900 text-sm">{order.user?.name || order.shippingAddress?.name || 'Khách hàng vãng lai'}</p>
                 {order.user?.email && <p className="text-xs text-gray-500 mt-0.5">{order.user.email}</p>}
                 {order.shippingAddress?.phone && <p className="text-xs text-gray-500">{order.shippingAddress.phone}</p>}
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2">Địa chỉ giao hàng</p>
-                {order.shippingAddress && (
+                {order.shippingAddress ? (
                   <div className="text-xs text-gray-600 space-y-0.5">
                     <p className="font-semibold text-sm text-gray-900">{order.shippingAddress.name}</p>
                     <p>{order.shippingAddress.phone}</p>
                     <p>{order.shippingAddress.address}{order.shippingAddress.district ? ', ' + order.shippingAddress.district : ''}</p>
                     <p>{order.shippingAddress.province}</p>
-                    {order.shippingAddress.note && <p className="italic text-gray-400">Ghi chú: {order.shippingAddress.note}</p>}
+                    {order.shippingAddress.note && <p className="italic text-gray-400 mt-1">Ghi chú: {order.shippingAddress.note}</p>}
                   </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">Không có thông tin địa chỉ</p>
                 )}
               </div>
             </div>
@@ -173,7 +188,7 @@ export const InvoicePage = () => {
                 <p className="text-sm text-gray-800 font-medium">{PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod}</p>
               </div>
               <span className={`ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-sm ${order.paymentStatus === 'Đã thanh toán' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                {order.paymentStatus}
+                {order.paymentStatus || 'Chưa thanh toán'}
               </span>
             </div>
 
@@ -193,13 +208,13 @@ export const InvoicePage = () => {
                   return (
                     <div key={idx} className="grid grid-cols-12 px-3 py-3 items-center">
                       <div className="col-span-6 flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#F4F2EE] flex-shrink-0 overflow-hidden">
-                          {item.product?.image
-                            ? <img src={item.product.image} alt={item.product?.name} className="w-full h-full object-cover" />
+                        <div className="w-10 h-10 bg-[#F4F2EE] flex-shrink-0 overflow-hidden rounded-sm">
+                          {item.product?.image || item.image
+                            ? <img src={item.product?.image || item.image} alt={item.product?.name || item.name} className="w-full h-full object-cover" />
                             : <Package size={14} className="m-auto mt-3 text-gray-400" />}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{item.product?.name || 'Sản phẩm đã xóa'}</p>
+                          <p className="text-sm font-medium text-gray-900">{item.product?.name || item.name || 'Sản phẩm đã xóa'}</p>
                           {item.size && <p className="text-[11px] text-gray-400">Size: {item.size}</p>}
                         </div>
                       </div>
@@ -234,7 +249,7 @@ export const InvoicePage = () => {
                     <p className="text-[10px] text-gray-400">Đã bao gồm VAT (nếu có)</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-xl" style={{ color: '#C9A96E' }}>{fmtVND(toVND(order.totalPrice))}</p>
+                    <p className="font-bold text-xl" style={{ color: '#C9A96E' }}>{fmtVND(toVND(order.totalPrice || 0))}</p>
                     {order.originalPrice > 0 && order.originalPrice !== order.totalPrice && (
                       <p className="text-xs line-through text-gray-400">{fmtVND(toVND(order.originalPrice))}</p>
                     )}
