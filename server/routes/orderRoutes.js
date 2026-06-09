@@ -4,14 +4,16 @@ const { createOrder, confirmPayment } = require('../controllers/orderController'
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 const Order = require('../models/Order');
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
 
-// POST /api/orders - Tạo đơn hàng mới (BẮT BUỘC đăng nhập)
+// ── POST /api/orders - Tạo đơn hàng mới (BẮT BUỘC đăng nhập) ────────────────
 router.post('/', authMiddleware, createOrder);
 
-// PUT /api/orders/:id/confirm-payment - Khách hàng báo đã chuyển khoản
+// ── PUT /api/orders/:id/confirm-payment - Khách hàng báo đã chuyển khoản ─────
 router.put('/:id/confirm-payment', authMiddleware, confirmPayment);
 
-// GET /api/orders/myorders - Lấy đơn hàng của người dùng hiện tại
+// ── GET /api/orders/myorders - Lấy đơn hàng của người dùng hiện tại ──────────
 router.get('/myorders', authMiddleware, async (req, res) => {
     try {
         const orders = await Order.find({ user: req.user.id })
@@ -23,11 +25,22 @@ router.get('/myorders', authMiddleware, async (req, res) => {
     }
 });
 
-// GET /api/orders/:id - Chi tiết đơn hàng của khách (chỉ xem đơn của mình)
+// ── GET /api/orders/:id - Chi tiết đơn hàng ──────────────────────────────────
+// Admin xem được tất cả đơn, user chỉ xem đơn của mình
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
-        const order = await Order.findOne({ _id: req.params.id, user: req.user.id })
-            .populate('items.product', 'name image price category');
+        // Kiểm tra xem user hiện tại có phải admin không (query DB)
+        const user = await User.findById(req.user.id).select('isAdmin');
+        const isAdmin = user?.isAdmin === true;
+
+        const filter = isAdmin
+            ? { _id: req.params.id }
+            : { _id: req.params.id, user: req.user.id };
+
+        const order = await Order.findOne(filter)
+            .populate('items.product', 'name image price category')
+            .populate('user', 'name email');
+
         if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
         res.json(order);
     } catch (err) {
@@ -44,7 +57,6 @@ router.get('/', adminMiddleware, async (req, res) => {
         if (req.query.status) filter.status = req.query.status;
         if (req.query.paymentMethod) filter.paymentMethod = req.query.paymentMethod;
         if (req.query.search) {
-            // Tìm theo orderCode hoặc địa chỉ
             filter.$or = [
                 { orderCode: { $regex: req.query.search, $options: 'i' } },
                 { address: { $regex: req.query.search, $options: 'i' } },
