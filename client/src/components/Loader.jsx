@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 
+// Helper đọc/ghi sessionStorage an toàn (tránh crash trên Safari private, iframe, v.v.)
+const storage = {
+  get: (key) => {
+    try { return sessionStorage.getItem(key) } catch { return null }
+  },
+  set: (key, value) => {
+    try { sessionStorage.setItem(key, value) } catch { /* bỏ qua */ }
+  },
+}
+
 export default function Loader() {
   const canvasRef = useRef(null)
   const [slideY, setSlideY] = useState(0)
@@ -7,7 +17,7 @@ export default function Loader() {
 
   const [isFirstTime] = useState(() => {
     if (typeof window === 'undefined') return false
-    return !localStorage.getItem('hasSeenArumeLoader')
+    return !storage.get('hasSeenArumeLoader')
   })
 
   const slideRef = useRef(0)
@@ -18,7 +28,7 @@ export default function Loader() {
     dismissedRef.current = true
     setDismissed(true)
     setSlideY(100)
-    localStorage.setItem('hasSeenArumeLoader', 'true')
+    storage.set('hasSeenArumeLoader', 'true')
   }
 
   // Tự động tắt loader sau 4.5 giây

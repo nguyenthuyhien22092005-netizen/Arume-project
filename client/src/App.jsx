@@ -65,6 +65,7 @@ const ClientLayout = () => (
 // =========================================
 const HomePage = () => (
   <>
+    <Loader />
     <BannerSlider />
     <PressMarquee />
     <QuoteSection />
@@ -89,9 +90,6 @@ function App() {
       <WishlistProvider>
         <CartProvider>
           <Router>
-            {/* Loader nằm trong Router để dùng được useLocation */}
-            <Loader />
-
             <Routes>
 
               {/* =========================================
@@ -106,6 +104,9 @@ function App() {
                 <Route path="coupons" element={<AdminCoupons />} />
               </Route>
 
+              {/* Trang hóa đơn — không có Header, Footer, và Loader */}
+              <Route path="/invoice/:orderId" element={<InvoicePage />} />
+
               {/* =========================================
                   CLIENT ROUTES (Có Header + Footer)
                  ========================================= */}
@@ -119,7 +120,6 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/policies/*" element={<Policy />} />
                 <Route path="/checkout/success" element={<CheckoutSuccess />} />
-                <Route path="/invoice/:orderId" element={<InvoicePage />} />
               </Route>
 
             </Routes>
