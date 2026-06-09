@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
@@ -84,19 +84,14 @@ const HomePage = () => (
 // APP ROOT
 // =========================================
 function App() {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2800);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <AuthProvider>
       <WishlistProvider>
         <CartProvider>
-          {loading && <Loader />}
           <Router>
+            {/* Loader nằm trong Router để dùng được useLocation */}
+            <Loader />
+
             <Routes>
 
               {/* =========================================

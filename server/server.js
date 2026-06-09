@@ -40,14 +40,15 @@ app.use(cors({
         if (isAllowed || isVercelPreview) {
             callback(null, true);
         } else {
-            // Thay vì trả về false làm lỗi Preflight OPTIONS, ta có thể log ra để dev biết origin nào bị chặn
+            // Log ra để dev biết origin nào đang bị hệ thống chặn lại
             console.log(`[CORS Blocked] Request từ origin lạ: ${origin}`);
             callback(null, false);
         }
     },
     credentials: true, // Bắt buộc phải có nếu frontend cấu hình axios gửi cookie/token
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    // Bổ sung thêm 'Origin' vào danh sách cho phép thông quan của trình duyệt
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     optionsSuccessStatus: 200 // Trả về 200 cho các request OPTIONS (Preflight) để trình duyệt không chặn
 }));
 

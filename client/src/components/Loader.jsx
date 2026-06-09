@@ -1,20 +1,48 @@
 import { useEffect, useRef, useState } from 'react'
 
+// BẬT/TẮT CHẾ ĐỘ THỬ NGHIỆM
+// true: Luôn hiện Loader mỗi khi F5 (phù hợp khi đang làm đồ án, sửa giao diện)
+// false: Chỉ hiện khi mở dự án lần đầu HOẶC khi quay về trang chủ (/)
+const ALWAYS_SHOW_FOR_TESTING = false
+
 export default function Loader() {
   const canvasRef = useRef(null)
   const [slideY, setSlideY] = useState(0)
   const [dismissed, setDismissed] = useState(false)
-  const [isFirstTime, setIsFirstTime] = useState(true) // Kiểm tra xem có phải lần đầu mở web không
-  const slideRef = useRef(0)      // persistent across re-renders
+
+  // Kiểm tra ngay lập tức để chặn render nếu không cần thiết
+  const [isFirstTime] = useState(() => {
+    if (ALWAYS_SHOW_FOR_TESTING) return true
+    if (typeof window !== 'undefined') {
+      const isHome = window.location.pathname === '/'
+      const hasSeen = sessionStorage.getItem('hasSeenArumeLoader')
+      // Hiện nếu: chưa từng xem, HOẶC đang ở trang chủ (quay về / từ trang khác)
+      return !hasSeen || isHome
+    }
+    return false
+  })
+
+  const slideRef = useRef(0)
   const dismissedRef = useRef(false)
 
-  // Kiểm tra localStorage ngay khi component mount
+  // Xóa flag khi người dùng rời trang chủ → lần sau về / sẽ hiện Loader lại
+  // Dùng popstate + click để bắt navigation trong React Router mà không cần useLocation
   useEffect(() => {
-    const hasSeenLoader = localStorage.getItem('hasSeenArumeLoader')
-    if (hasSeenLoader) {
-      setIsFirstTime(false)
-      setDismissed(true)
-      dismissedRef.current = true
+    const clearFlagIfNotHome = () => {
+      if (window.location.pathname !== '/') {
+        sessionStorage.removeItem('hasSeenArumeLoader')
+      }
+    }
+    window.addEventListener('popstate', clearFlagIfNotHome)
+    // Bắt cả click vào link nội bộ (React Router dùng history.pushState)
+    const origPush = history.pushState.bind(history)
+    history.pushState = (...args) => {
+      origPush(...args)
+      clearFlagIfNotHome()
+    }
+    return () => {
+      window.removeEventListener('popstate', clearFlagIfNotHome)
+      history.pushState = origPush
     }
   }, [])
 
@@ -24,29 +52,33 @@ export default function Loader() {
     dismissedRef.current = true
     setDismissed(true)
     setSlideY(100)
-    localStorage.setItem('hasSeenArumeLoader', 'true') // Lưu vào bộ nhớ máy để lần sau không hiện lại
+
+    if (!ALWAYS_SHOW_FOR_TESTING) {
+      sessionStorage.setItem('hasSeenArumeLoader', 'true')
+    }
   }
 
-  // Hàm xử lý khi người dùng NHẤP CHUỘT vào màn hình
-  const handleLoaderClick = () => {
-    handleDismiss()
-  }
-
+  // Tự động tắt loader sau 4.5 giây
   useEffect(() => {
-    // Nếu không phải lần đầu mở trang thì không cần lắng nghe sự kiện cuộn
-    if (localStorage.getItem('hasSeenArumeLoader')) return;
+    if (!isFirstTime) return
+    const autoDismissTimer = setTimeout(() => {
+      handleDismiss()
+    }, 4500)
+    return () => clearTimeout(autoDismissTimer)
+  }, [isFirstTime])
+
+  // Lắng nghe sự kiện Cuộn / Vuốt
+  useEffect(() => {
+    if (!isFirstTime) return
 
     let startY = null
 
     const onWheel = (e) => {
       if (dismissedRef.current) return
       if (e.deltaY < 0) {
-        // cuộn lên → tăng slide (loader đi lên)
         slideRef.current = Math.min(100, slideRef.current + Math.abs(e.deltaY) * 0.15)
         setSlideY(slideRef.current)
-        if (slideRef.current >= 100) {
-          handleDismiss()
-        }
+        if (slideRef.current >= 100) handleDismiss()
       }
     }
 
@@ -58,12 +90,9 @@ export default function Loader() {
       if (dismissedRef.current || startY === null) return
       const dy = e.touches[0].clientY - startY
       if (dy > 0) {
-        // ngón tay kéo xuống = scroll up = dismiss
         slideRef.current = Math.min(100, slideRef.current + dy * 0.5)
         setSlideY(slideRef.current)
-        if (slideRef.current >= 100) {
-          handleDismiss()
-        }
+        if (slideRef.current >= 100) handleDismiss()
       }
       startY = e.touches[0].clientY
     }
@@ -76,12 +105,11 @@ export default function Loader() {
       window.removeEventListener('touchstart', onTouchStart)
       window.removeEventListener('touchmove', onTouchMove)
     }
-  }, [])
+  }, [isFirstTime])
 
   // Canvas crystal animation
   useEffect(() => {
-    // Nếu đã xem rồi thì không cần chạy animation canvas cho nhẹ máy
-    if (localStorage.getItem('hasSeenArumeLoader')) return;
+    if (!isFirstTime) return
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -271,9 +299,9 @@ export default function Loader() {
     }
     animId = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(animId)
-  }, [])
+  }, [isFirstTime])
 
-  // Nếu không phải lần đầu vào web, ẩn hoàn toàn không render HTML ra để tối ưu hiệu năng
+  // Nếu không cần hiện Loader, không render gì cả
   if (!isFirstTime) return null
 
   return (
@@ -292,11 +320,11 @@ export default function Loader() {
           overflow: hidden;
           transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
           will-change: transform;
-          cursor: pointer; /* Thêm con trỏ dạng bấm để người dùng biết click được */
+          cursor: pointer;
         }
-        .loader.dismissed { 
-          pointer-events: none; 
-          transform: translateY(-100vh) !important; /* Đảm bảo ẩn hẳn lên trên */
+        .loader.dismissed {
+          pointer-events: none;
+          transform: translateY(-100vh) !important;
         }
         .loader-canvas {
           position: absolute; inset: 0; width: 100%; height: 100%;
@@ -377,14 +405,14 @@ export default function Loader() {
           .loader-tagline { animation: none; opacity: 1; }
           .loader-scroll-hint { animation: none; opacity: 1; }
           .loader-arrow   { animation: none; }
-          .loader          { transition: none; }
+          .loader         { transition: none; }
         }
       `}</style>
 
       <div
         className={`loader${dismissed ? ' dismissed' : ''}`}
         style={{ transform: `translateY(-${slideY}vh)` }}
-        onClick={handleLoaderClick} // Thêm sự kiện click để tắt nhanh
+        onClick={handleDismiss}
       >
         <canvas ref={canvasRef} className="loader-canvas" />
         <div className="loader-content">
