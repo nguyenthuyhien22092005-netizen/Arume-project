@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
@@ -22,6 +22,7 @@ import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { WishlistDrawer } from './components/WishlistDrawer';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
+import Loader from './components/Loader';
 
 // Admin Layout + Pages
 import { AdminLayout } from './components/admin/AdminLayout';
@@ -76,7 +77,6 @@ const HomePage = () => (
     <VideoShowcase />
     <QualityCommitment />
     <StoreServices />
-
   </>
 );
 
@@ -84,10 +84,18 @@ const HomePage = () => (
 // APP ROOT
 // =========================================
 function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2800);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <AuthProvider>
       <WishlistProvider>
         <CartProvider>
+          {loading && <Loader />}
           <Router>
             <Routes>
 
