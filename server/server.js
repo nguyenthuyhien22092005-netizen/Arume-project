@@ -22,33 +22,39 @@ const allowedOrigins = [
     'https://arume-project.vercel.app',
     'https://arume-project-21wl.vercel.app',
     process.env.FRONTEND_URL,
-].filter(Boolean); // Loại bỏ các giá trị undefined hoặc null nếu biến môi trường chưa có
+].filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Kiểm tra xem origin gửi tới có kết thúc bằng .vercel.app hay không
-        const isVercelDomain = origin && origin.endsWith('.vercel.app');
+        // Nếu không có origin (ví dụ: Postman hoặc các request server-to-server) thì cho qua
+        if (!origin) {
+            return callback(null, true);
+        }
 
-        // Cho phép nếu:
-        // - Không có origin (ví dụ: Postman, công cụ test)
-        // - Hoặc origin nằm chính xác trong mảng allowedOrigins cố định
-        // - Hoặc origin là bất kỳ sub-domain nào từ hệ sinh thái Vercel (.vercel.app)
-        if (!origin || allowedOrigins.includes(origin) || isVercelDomain) {
+        // Kiểm tra xem origin có nằm trong danh sách cố định không
+        const isAllowed = allowedOrigins.includes(origin);
+
+        // Kiểm tra xem origin có phải là subdomain dạng preview của Vercel hay không (chứa ".vercel.app")
+        const isVercelPreview = origin.endsWith('.vercel.app') || origin.includes('.vercel.app');
+
+        if (isAllowed || isVercelPreview) {
             callback(null, true);
         } else {
-            // Trả về false thay vì ném ra Error để tránh làm sập (crash) server Node.js trên Railway
+            // Thay vì trả về false làm lỗi Preflight OPTIONS, ta có thể log ra để dev biết origin nào bị chặn
+            console.log(`[CORS Blocked] Request từ origin lạ: ${origin}`);
             callback(null, false);
         }
     },
-    credentials: true, // Cho phép gửi cookie, headers định danh từ client
+    credentials: true, // Bắt buộc phải có nếu frontend cấu hình axios gửi cookie/token
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 200 // Trả về 200 cho các request OPTIONS (Preflight) để trình duyệt không chặn
 }));
 
 // Đọc dữ liệu JSON từ body của request
 app.use(express.json());
 
-// 3. Định tuyến các API Routes (Bắt buộc nằm dưới Middleware CORS)
+// 3. Định tuyến các API Routes
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
@@ -63,7 +69,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`=== SERVER ARUME IS RUNNING ===`);
     console.log(`Port: ${PORT}`);
-    console.log(`Allowed Origins:`, allowedOrigins);
-    console.log(`Dynamic CORS: Allowed all *.vercel.app domains`);
     console.log(`===============================`);
 });
