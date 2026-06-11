@@ -88,23 +88,26 @@ export const CartProvider = ({ children }) => {
   }, [isCartOpen]);
   // ─────────────────────────────────────────────────────────────────────────
 
-  const addToCart = (product, quantity = 1) => {
+  const addToCart = (product, quantity = 1, selectedSize = '') => {
+    const productId = product._id || product.id;
     setCartItems(prev => {
-      const existing = prev.find(item => item._id === product._id || item.id === product.id);
+      const existing = prev.find(item =>
+        (item._id || item.id) === productId && item.selectedSize === selectedSize
+      );
       if (existing) {
         return prev.map(item =>
-          (item._id === product._id || item.id === product.id)
+          (item._id || item.id) === productId && item.selectedSize === selectedSize
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prev, { ...product, quantity }];
+      return [...prev, { ...product, _id: productId, quantity, selectedSize }];
     });
     setIsCartOpen(true);
   };
 
   const removeFromCart = (productId) => {
-    setCartItems(prev => prev.filter(item => item._id !== productId && item.id !== productId));
+    setCartItems(prev => prev.filter(item => (item._id || item.id) !== productId));
     setSyncWarnings(prev => prev.filter(w => w.id !== productId));
   };
 
@@ -114,7 +117,7 @@ export const CartProvider = ({ children }) => {
       return;
     }
     setCartItems(prev => prev.map(item =>
-      (item._id === productId || item.id === productId)
+      (item._id || item.id) === productId
         ? { ...item, quantity: newQuantity }
         : item
     ));

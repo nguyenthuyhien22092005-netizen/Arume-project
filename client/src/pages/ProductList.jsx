@@ -31,6 +31,7 @@ const ShopProductCard = ({ product, onBuyNow, compact, onRequireAuth }) => {
   const { addToCart } = useCart();
   const { user } = useAuth();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const navigate = useNavigate();
   const isFav = isInWishlist(product._id);
 
   const handleBuyNow = (e) => {
@@ -66,13 +67,12 @@ const ShopProductCard = ({ product, onBuyNow, compact, onRequireAuth }) => {
           <Heart size={13} className={isFav ? 'fill-amber-800 text-amber-800' : 'text-zinc-500 stroke-[1.5]'} />
         </button>
         <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-500 flex backdrop-blur-xs">
-          <Link
-            to={`/product/${product._id || product.id}`}
-            onClick={(e) => e.stopPropagation()}
+          <button
+            onClick={(e) => { e.preventDefault(); navigate(`/product/${product._id || product.id}`); }}
             className="flex-1 bg-[#FAF6F0]/95 dark:bg-zinc-900/95 text-zinc-800 dark:text-zinc-200 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-zinc-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors border-r border-zinc-200/40 flex items-center justify-center"
           >
             Xem chi tiết
-          </Link>
+          </button>
           <button
             onClick={handleBuyNow}
             disabled={product.stock <= 0}

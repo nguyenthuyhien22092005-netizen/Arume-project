@@ -251,7 +251,7 @@ export const ProductDetail = () => {
     : 0;
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    addToCart(product, quantity, selectedSize);
     setAddedMsg(true);
     setTimeout(() => setAddedMsg(false), 2500);
   };

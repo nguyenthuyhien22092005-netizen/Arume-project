@@ -240,13 +240,13 @@ const CheckoutModal = ({ isOpen, onClose, product, cartTotal }) => {
         ? cartItems.map(item => ({
           product: item._id || item.id,
           quantity: item.quantity || 1,
-          size: item.selectedSize || item.size || '',
+          size: typeof item.selectedSize === 'string' ? item.selectedSize : '',
           price: item.price
         }))
         : [{
           product: product?._id || product?.id,
           quantity: product?.quantity || 1,
-          size: product?.selectedSize || '',
+          size: typeof product?.selectedSize === 'string' ? product.selectedSize : '',
           price: product?.price
         }];
 

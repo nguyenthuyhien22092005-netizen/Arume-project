@@ -153,9 +153,9 @@ exports.createOrder = async (req, res) => {
 
         res.status(201).json(populated);
     } catch (err) {
-        // Rollback nếu có lỗi
         await session.abortTransaction();
         session.endSession();
+        console.error('createOrder error:', err.message);
         res.status(400).json({ error: err.message });
     }
 };
