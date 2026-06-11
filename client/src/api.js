@@ -1,11 +1,12 @@
 import axios from 'axios';
 
-// Lấy link từ biến môi trường của Vercel, nếu chạy máy local thì dùng localhost:5000
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Tự động thêm /api nếu VITE_API_URL chưa có — tránh lỗi khi deploy
+const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const BASE_URL = rawUrl.replace(/\/api\/?$/, '') + '/api';
 
 const API = axios.create({ 
   baseURL: BASE_URL,
-  withCredentials: true // Cho phép gửi kèm cookie/credentials nếu hệ thống cần
+  withCredentials: true
 });
 
 // Tự động gắn token JWT vào mọi request lên server nếu có trong localStorage

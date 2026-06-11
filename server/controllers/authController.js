@@ -57,9 +57,25 @@ exports.forgotPassword = async (req, res) => {
         // Gửi email OTP thật qua Nodemailer
         await sendForgotPasswordEmail(email, user.name, resetCode);
         
-        res.json({ 
-            message: "Mã xác nhận đã được gửi đến email của bạn",
+        res.json({ message: "Mã xác nhận đã được gửi đến email của bạn" });
+    } catch (err) {
+        // Log chi tiết để debug trên Railway
+        console.error("❌ [forgotPassword] Lỗi:", err.message);
+        res.status(500).json({ message: "Không thể gửi email. Vui lòng thử lại sau." });
+    }
+};
+
+// Xác thực OTP
+exports.verifyOtp = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        const user = await User.findOne({
+            email,
+            resetPasswordCode: code,
+            resetPasswordExpiry: { $gt: Date.now() }
         });
+        if (!user) return res.status(400).json({ message: "Mã xác nhận không hợp lệ hoặc đã hết hạn" });
+        res.json({ message: "Mã xác nhận hợp lệ" });
     } catch (err) {
         res.status(500).json({ message: "Lỗi server" });
     }
@@ -96,16 +112,14 @@ exports.googleAuth = async (req, res) => {
         let user = await User.findOne({ $or: [{ googleId }, { email }] });
         
         if (!user) {
-            // Tạo user mới từ Google
             user = await User.create({
                 name,
                 email,
                 googleId,
                 avatar,
-                password: crypto.randomBytes(20).toString('hex'), // random password
+                password: crypto.randomBytes(20).toString('hex'),
             });
         } else if (!user.googleId) {
-            // Liên kết tài khoản cũ với Google
             user.googleId = googleId;
             user.avatar = avatar;
             await user.save();

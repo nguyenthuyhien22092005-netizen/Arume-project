@@ -1,9 +1,17 @@
 const nodemailer = require('nodemailer');
 
-const createTransporter = () => nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-});
+const createTransporter = () => {
+    // Xóa khoảng trắng thừa trong App Password (phòng trường hợp copy sai)
+    const pass = (process.env.EMAIL_PASS || '').replace(/\s+/g, ' ').trim();
+
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: pass,
+        },
+    });
+};
 
 // ─── Shared layout wrapper ─────────────────────────────────────────────────
 const layout = (bodyHtml) => `
@@ -119,6 +127,13 @@ const infoRow = (key, val) =>
 // ─── 1. Gửi OTP Quên mật khẩu ─────────────────────────────────────────────
 const sendForgotPasswordEmail = async (toEmail, userName, otpCode) => {
     const transporter = createTransporter();
+
+    // ── DEBUG ──
+    console.log('📧 EMAIL_USER:', process.env.EMAIL_USER);
+    console.log('📧 EMAIL_PASS length:', (process.env.EMAIL_PASS || '').length);
+    console.log('📧 Verifying transporter...');
+    await transporter.verify();
+    console.log('✅ Transporter OK, sending to:', toEmail);
     const body = `
       ${section(`
         ${heading('Đặt lại mật khẩu')}

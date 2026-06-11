@@ -58,6 +58,15 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }) => {
     setFormData({ name: '', email: '', password: '', confirmPassword: '', code: '', newPassword: '' });
   };
 
+  // Chuyển tab nhưng GIỮ LẠI email (dùng khi chuyển forgot → verify)
+  const switchTab = (newTab) => {
+    setTab(newTab);
+    setError('');
+    setSuccessMsg('');
+    setDevCode('');
+    setFormData(prev => ({ name: '', password: '', confirmPassword: '', code: '', newPassword: '', email: prev.email }));
+  };
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   // Đăng nhập
@@ -107,7 +116,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }) => {
       const res = await API.post('/auth/forgot-password', { email: formData.email });
       setDevCode(res.data.devCode || '');
       setSuccessMsg(res.data.message);
-      setTab('verify');
+      switchTab('verify');
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi server, vui lòng thử lại');
     } finally { setLoading(false); }
@@ -265,7 +274,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }) => {
         {/* ===== NHẬP MÃ XÁC NHẬN ===== */}
         {tab === 'verify' && (
           <div className="p-10">
-            <button onClick={() => reset('forgot')} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white mb-6 transition">
+            <button onClick={() => switchTab('forgot')} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white mb-6 transition">
               <ArrowLeft size={16} /> Quay lại
             </button>
             <h2 className="text-2xl font-serif italic mb-2 dark:text-white">Đặt Lại Mật Khẩu</h2>
