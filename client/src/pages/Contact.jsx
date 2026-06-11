@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 export const Contact = () => {
   const [form, setForm] = useState({ name: '', phone: '', email: '', subject: 'Tư vấn sản phẩm', message: '' });
@@ -39,6 +41,13 @@ export const Contact = () => {
   return (
     <div className="bg-[#F9F7F2] dark:bg-gray-900 min-h-screen pt-28 pb-24 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
+
+        {/* Nút quay lại */}
+        <div className="mb-10">
+          <Link to="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+            <ArrowLeft size={14} /> Trang chủ
+          </Link>
+        </div>
 
         {/* Header */}
         <div className="text-center mb-20">

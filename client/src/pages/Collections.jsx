@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getProducts } from '../api';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 export const Collections = () => {
   const [collections, setCollections] = useState([]);
@@ -58,6 +59,13 @@ export const Collections = () => {
       {/* BỐ CỤC ĐƯỢC GIẢI PHÓNG KHOẢNG TRỐNG THEO NGUYÊN MẪU IMAGE_77A0E4.PNG */}
       <div className="max-w-[1450px] mx-auto px-6 sm:px-10 pt-28 pb-32 font-sans">
         
+        {/* Nút quay lại */}
+        <div className="mb-8 pt-6">
+          <Link to="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
+            <ArrowLeft size={14} /> Trang chủ
+          </Link>
+        </div>
+
         {/* Tiêu đề đặt lệch góc trái - Tối giản & Tĩnh lặng */}
         <div className="mb-14 border-b border-zinc-200/40 dark:border-zinc-900/60 pb-6">
           <h1 className="text-3xl md:text-4xl font-serif font-light tracking-[0.05em] text-zinc-900 dark:text-zinc-100">

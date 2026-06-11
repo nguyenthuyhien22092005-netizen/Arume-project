@@ -5,9 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { getMyOrders } from '../api';
-import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, MapPin, FileText } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, MapPin, FileText, ArrowLeft } from 'lucide-react';
 
-// ── Status helpers ────────────────────────────────────────────────────────────
+// -- Status helpers --
 const statusConfig = {
   'Đang xử lý':  { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock,       step: 0 },
   'Đã xác nhận': { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',         icon: CheckCircle, step: 1 },
@@ -28,7 +28,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// ── Tracking Timeline ─────────────────────────────────────────────────────────
+// -- Tracking Timeline --
 const TrackingTimeline = ({ order }) => {
   const currentStep = statusConfig[order.status]?.step ?? 0;
   const cancelled = order.status === 'Đã hủy';
@@ -88,7 +88,7 @@ const TrackingTimeline = ({ order }) => {
   );
 };
 
-// ── Order Card ────────────────────────────────────────────────────────────────
+// -- Order Card --
 const OrderCard = ({ order }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -180,7 +180,7 @@ const OrderCard = ({ order }) => {
                 🏷️ Mã giảm giá: <span className="font-mono">{order.couponCode}</span>
               </span>
               {order.discountAmount > 0 && (
-                <span className="text-green-600 font-bold">−${(order.discountAmount || 0).toFixed(2)}</span>
+                <span className="text-green-600 font-bold">-${(order.discountAmount || 0).toFixed(2)}</span>
               )}
             </div>
           )}
@@ -193,7 +193,7 @@ const OrderCard = ({ order }) => {
   );
 };
 
-// ── Main Profile Page ─────────────────────────────────────────────────────────
+// -- Main Profile Page --
 export const Profile = () => {
   const { wishlistItems } = useWishlist();
   const [activeTab, setActiveTab] = useState('orders');
@@ -227,6 +227,13 @@ export const Profile = () => {
   return (
     <div className="bg-[#F9F7F2] dark:bg-gray-900 min-h-screen pt-28 pb-20 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
+
+        {/* Nút quay lại */}
+        <div className="mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+            <ArrowLeft size={14} /> Trang chủ
+          </Link>
+        </div>
 
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-end border-b border-gray-300 dark:border-gray-700 pb-8 mb-12">

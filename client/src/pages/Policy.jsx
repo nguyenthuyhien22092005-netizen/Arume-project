@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 export const Policy = () => {
   const location = useLocation();
@@ -113,6 +114,13 @@ export const Policy = () => {
   return (
     <div className="bg-[#FAF6F0] text-[#111111] dark:bg-zinc-950 dark:text-zinc-100 min-h-screen pt-28 pb-32 transition-colors duration-500 antialiased selection:bg-amber-100/50">
       <div className="max-w-[1450px] mx-auto px-6 sm:px-10 pt-16 font-sans">
+
+        {/* Nút quay lại */}
+        <div className="mb-8">
+          <Link to="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
+            <ArrowLeft size={14} /> Trang chủ
+          </Link>
+        </div>
 
         {/* THANH TAB — trên đầu */}
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-xs uppercase tracking-widest font-light mb-8 border-b border-zinc-200/40 dark:border-zinc-900/60 pb-5">
