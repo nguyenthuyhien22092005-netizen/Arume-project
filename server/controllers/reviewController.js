@@ -53,7 +53,7 @@ exports.createReview = async (req, res) => {
         const hasPurchased = await Order.exists({
             user: req.user.id,
             'items.product': productId,
-            status: { $in: ['delivered', 'completed'] },
+            status: { $in: ['Đã giao', 'delivered', 'completed'] },
         });
 
         const existing = await Review.findOne({ product: productId, user: req.user.id });

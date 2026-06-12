@@ -63,7 +63,14 @@ export const InteractiveLifestyle = () => {
                 Xem chi tiết
               </Link>
               <button
-                onClick={() => addToCart(product)}
+                onClick={() => {
+                  // Nếu có size → redirect sang trang detail để chọn size
+                  if (Array.isArray(product.size) && product.size.length > 0) {
+                    navigate(`/product/${product._id}`);
+                    return;
+                  }
+                  addToCart(product);
+                }}
                 disabled={product.stock <= 0}
                 className="bg-black text-white px-6 py-2 text-xs uppercase tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-40"
               >

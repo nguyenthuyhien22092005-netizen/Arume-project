@@ -26,6 +26,10 @@ router.get('/myorders', authMiddleware, async (req, res) => {
     }
 });
 
+// ── PUT /api/orders/:id/cancel - Hủy đơn hàng ─
+const { cancelMyOrder } = require('../controllers/orderController');
+router.put('/:id/cancel', authMiddleware, cancelMyOrder);
+
 // ── GET /api/orders - Lấy toàn bộ đơn hàng trong hệ thống (Dành cho Admin) ────
 router.get('/', adminMiddleware, async (req, res) => {
     try {
@@ -125,27 +129,37 @@ router.put('/:id/status', adminMiddleware, async (req, res) => {
             'Đã hủy': 'Đơn hàng đã bị hủy',
         };
 
-        const updateData = {
-            status,
-            $push: {
-                trackingHistory: {
-                    status,
-                    description: description || statusDescriptions[status] || `Trạng thái cập nhật: ${status}`,
-                    timestamp: new Date(),
-                    updatedBy: req.user?.name || 'Admin',
-                }
-            }
-        };
-
-        if (trackingNumber) updateData.trackingNumber = trackingNumber;
-        if (adminNote !== undefined) updateData.adminNote = adminNote;
-        if (paymentStatus) updateData.paymentStatus = paymentStatus;
-
-        const order = await Order.findByIdAndUpdate(req.params.id, updateData, { new: true })
-            .populate('user', 'name email')
-            .populate('items.product', 'name image price');
-
+        const order = await Order.findById(req.params.id).populate('user', 'name email');
         if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+
+        order.status = status;
+        if (trackingNumber) order.trackingNumber = trackingNumber;
+        if (adminNote !== undefined) order.adminNote = adminNote;
+        if (paymentStatus) order.paymentStatus = paymentStatus;
+
+        order.trackingHistory.push({
+            status,
+            description: description || statusDescriptions[status] || `Trạng thái cập nhật: ${status}`,
+            timestamp: new Date(),
+            updatedBy: req.user?.name || 'Admin',
+        });
+
+        // ── Xử lý thăng hạng VIP tự động ──
+        if (!order.isCountedTowardsVIP && (order.status === 'Đã giao' || order.paymentStatus === 'Đã thanh toán')) {
+            order.isCountedTowardsVIP = true;
+            const buyer = await User.findById(order.user._id);
+            if (buyer) {
+                buyer.totalSpent = (buyer.totalSpent || 0) + order.totalPrice;
+                // Xét duyệt hạng
+                if (buyer.totalSpent >= 5000) buyer.memberTier = 'VIP';
+                else if (buyer.totalSpent >= 1000) buyer.memberTier = 'GOLD';
+                await buyer.save();
+            }
+        }
+
+        await order.save();
+        await order.populate('items.product', 'name image price');
+
         res.json(order);
     } catch (err) {
         res.status(400).json({ error: err.message });

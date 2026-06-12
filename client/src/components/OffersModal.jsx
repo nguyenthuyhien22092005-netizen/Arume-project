@@ -28,32 +28,48 @@ export const OffersModal = ({ isOpen, onClose }) => {
           <div className="space-y-4">
             <div className="bg-white dark:bg-gray-800 p-6 border border-gray-200 dark:border-gray-700 flex justify-between items-center group">
               <div>
-                <h3 className="font-bold text-lg dark:text-white">Giảm 30% toàn bộ Đơn hàng</h3>
-                <p className="text-xs text-gray-500 mt-1">Áp dụng cho mọi tuyệt tác trang sức.</p>
+                <h3 className="font-bold text-lg dark:text-white">Giảm 30% đơn hàng đầu tiên</h3>
+                <p className="text-xs text-gray-500 mt-1">Dành riêng cho khách hàng mới · Tối đa $50.</p>
               </div>
               <div className="text-center">
-                <span className="block border-2 border-dashed border-red-800 dark:border-red-400 text-red-800 dark:text-red-400 font-mono px-3 py-1 bg-red-50 dark:bg-red-900/20 font-bold mb-2">SALEM30</span>
+                <span className="block border-2 border-dashed border-red-800 dark:border-red-400 text-red-800 dark:text-red-400 font-mono px-3 py-1 bg-red-50 dark:bg-red-900/20 font-bold mb-2">WELCOME30</span>
                 <button
-                  onClick={() => handleCopy('SALEM30')}
-                  className={`text-[10px] uppercase font-bold tracking-widest transition ${copiedCode === 'SALEM30' ? 'text-green-600' : 'text-gray-400 group-hover:text-black dark:group-hover:text-white'}`}
+                  onClick={() => handleCopy('WELCOME30')}
+                  className={`text-[10px] uppercase font-bold tracking-widest transition ${copiedCode === 'WELCOME30' ? 'text-green-600' : 'text-gray-400 group-hover:text-black dark:group-hover:text-white'}`}
                 >
-                  {copiedCode === 'SALEM30' ? '✓ Đã copy!' : 'Copy Mã'}
+                  {copiedCode === 'WELCOME30' ? '✓ Đã copy!' : 'Copy Mã'}
                 </button>
               </div>
             </div>
 
             <div className="bg-white dark:bg-gray-800 p-6 border border-gray-200 dark:border-gray-700 flex justify-between items-center group">
               <div>
-                <h3 className="font-bold text-lg dark:text-white">Miễn phí Vận chuyển</h3>
-                <p className="text-xs text-gray-500 mt-1">Đơn hàng từ $500 trở lên.</p>
+                <h3 className="font-bold text-lg dark:text-white">Miễn phí Vận chuyển nhanh</h3>
+                <p className="text-xs text-gray-500 mt-1">Đơn hàng từ $200 trở lên.</p>
               </div>
               <div className="text-center">
-                <span className="block border-2 border-dashed border-black dark:border-white dark:text-white font-mono px-3 py-1 bg-gray-50 dark:bg-gray-700 font-bold mb-2">FREESHIP</span>
+                <span className="block border-2 border-dashed border-black dark:border-white dark:text-white font-mono px-3 py-1 bg-gray-50 dark:bg-gray-700 font-bold mb-2">FREESHIP200</span>
                 <button
-                  onClick={() => handleCopy('FREESHIP')}
-                  className={`text-[10px] uppercase font-bold tracking-widest transition ${copiedCode === 'FREESHIP' ? 'text-green-600' : 'text-gray-400 group-hover:text-black dark:group-hover:text-white'}`}
+                  onClick={() => handleCopy('FREESHIP200')}
+                  className={`text-[10px] uppercase font-bold tracking-widest transition ${copiedCode === 'FREESHIP200' ? 'text-green-600' : 'text-gray-400 group-hover:text-black dark:group-hover:text-white'}`}
                 >
-                  {copiedCode === 'FREESHIP' ? '✓ Đã copy!' : 'Copy Mã'}
+                  {copiedCode === 'FREESHIP200' ? '✓ Đã copy!' : 'Copy Mã'}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 border border-gray-200 dark:border-gray-700 flex justify-between items-center group">
+              <div>
+                <h3 className="font-bold text-lg dark:text-white">Giảm 15% toàn bộ sản phẩm</h3>
+                <p className="text-xs text-gray-500 mt-1">Áp dụng cho mọi đơn hàng · Tối đa $30.</p>
+              </div>
+              <div className="text-center">
+                <span className="block border-2 border-dashed border-amber-700 dark:border-amber-400 text-amber-800 dark:text-amber-400 font-mono px-3 py-1 bg-amber-50 dark:bg-amber-900/20 font-bold mb-2">SALE15</span>
+                <button
+                  onClick={() => handleCopy('SALE15')}
+                  className={`text-[10px] uppercase font-bold tracking-widest transition ${copiedCode === 'SALE15' ? 'text-green-600' : 'text-gray-400 group-hover:text-black dark:group-hover:text-white'}`}
+                >
+                  {copiedCode === 'SALE15' ? '✓ Đã copy!' : 'Copy Mã'}
                 </button>
               </div>
             </div>

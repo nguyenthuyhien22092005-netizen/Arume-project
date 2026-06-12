@@ -69,7 +69,7 @@ exports.syncCart = async (req, res) => {
 
         const products = await Product.find(
             { _id: { $in: ids } },
-            '_id name price stock' // chỉ lấy các trường cần thiết
+            '_id name price stock size' // chỉ lấy các trường cần thiết
         );
 
         // Map theo _id để client dễ tra cứu
@@ -79,6 +79,7 @@ exports.syncCart = async (req, res) => {
                 name: p.name,
                 price: p.price,
                 stock: p.stock,
+                size: p.size,  // đồng bộ danh sách size từ DB
             };
         });
 

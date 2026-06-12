@@ -51,6 +51,8 @@ const orderSchema = new mongoose.Schema({
     }],
     // Ghi chú nội bộ của admin
     adminNote: { type: String },
+    // Cờ đánh dấu đã cộng dồn vào tổng chi tiêu VIP chưa
+    isCountedTowardsVIP: { type: Boolean, default: false },
     // Mã đơn hiển thị cho khách
     orderCode: { type: String, unique: true, sparse: true },
 }, { timestamps: true });

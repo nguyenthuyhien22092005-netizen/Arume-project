@@ -12,13 +12,12 @@ import {
   Package, ChevronLeft, ChevronRight, BadgeCheck
 } from 'lucide-react';
 
-// ─── Mã giảm giá ─────────────────────────────────────────────────────────────
+// ─── Mã giảm giá (đồng bộ với DB — xem seedCoupons.js) ──────────────────────
 const COUPONS = [
-  { code: 'ARUME10', desc: 'Giảm 10% cho đơn hàng đầu tiên', discount: '10%', type: 'percent', min: 0, color: 'from-amber-50 to-yellow-50', border: 'border-amber-200', badge: 'Mới' },
-  { code: 'VIP20', desc: 'Giảm 20% cho thành viên VIP', discount: '20%', type: 'percent', min: 500, color: 'from-purple-50 to-indigo-50', border: 'border-purple-200', badge: 'VIP' },
-  { code: 'FREESHIP', desc: 'Miễn phí vận chuyển cho mọi đơn hàng', discount: 'Free Ship', type: 'ship', min: 0, color: 'from-green-50 to-emerald-50', border: 'border-green-200', badge: 'HOT' },
-  { code: 'ARUGOLD', desc: 'Giảm $50 cho đơn hàng từ $300', discount: '-$50', type: 'fixed', min: 300, color: 'from-orange-50 to-red-50', border: 'border-orange-200', badge: 'Sale' },
-  { code: 'ARULOVE', desc: 'Ưu đãi Valentine – Giảm 15%', discount: '15%', type: 'percent', min: 200, color: 'from-pink-50 to-rose-50', border: 'border-pink-200', badge: '❤️' },
+  { code: 'ARUME10',    desc: 'Giảm 10% cho đơn từ $50',           discount: '10%',       type: 'percent',  min: 50,  color: 'from-amber-50 to-yellow-50',    border: 'border-amber-200',  badge: 'Mới' },
+  { code: 'WELCOME30',  desc: 'Giảm 30% cho khách hàng mới (tối đa $50)', discount: '30%', type: 'percent',  min: 0,   color: 'from-purple-50 to-indigo-50',  border: 'border-purple-200', badge: 'Mới' },
+  { code: 'FREESHIP200',desc: 'Miễn phí vận chuyển nhanh từ $200', discount: 'Free Ship', type: 'ship',     min: 200, color: 'from-green-50 to-emerald-50',   border: 'border-green-200',  badge: 'HOT' },
+  { code: 'SALE15',     desc: 'Giảm 15% toàn bộ sản phẩm (tối đa $30)',  discount: '15%', type: 'percent',  min: 0,   color: 'from-orange-50 to-red-50',     border: 'border-orange-200', badge: 'Sale' },
 ];
 
 // ─── Copy coupon ──────────────────────────────────────────────────────────────

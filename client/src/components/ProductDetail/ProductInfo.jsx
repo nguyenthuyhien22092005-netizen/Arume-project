@@ -5,13 +5,22 @@ import { useWishlist } from '../../context/WishlistContext';
 
 const ProductInfo = ({ product, onBuyNow }) => {
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState('');
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
   const isFavorite = isInWishlist(product._id || product.id);
+  const hasSizes = Array.isArray(product.size) && product.size.length > 0;
+  const canAddToCart = !hasSizes || selectedSize !== '';
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    if (!canAddToCart) return;
+    addToCart(product, quantity, selectedSize);
+  };
+
+  const handleBuyNow = () => {
+    if (!canAddToCart) return;
+    onBuyNow(selectedSize);
   };
 
   return (
@@ -28,6 +37,40 @@ const ProductInfo = ({ product, onBuyNow }) => {
         </p>
       </div>
 
+      {/* Size picker — chỉ hiển thị khi sản phẩm có size */}
+      {hasSizes && (
+        <div>
+          <p className="text-xs uppercase tracking-widest font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            Kích thước
+            {selectedSize && (
+              <span className="ml-2 text-gray-400 font-normal normal-case tracking-normal">
+                — {selectedSize}
+              </span>
+            )}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {product.size.map((s) => (
+              <button
+                key={s}
+                onClick={() => setSelectedSize(s === selectedSize ? '' : s)}
+                className={`px-4 py-2 text-sm border transition-all duration-200
+                  ${selectedSize === s
+                    ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                    : 'border-gray-300 text-gray-700 hover:border-black dark:border-gray-600 dark:text-gray-300 dark:hover:border-white'
+                  }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+          {!selectedSize && (
+            <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+              ⚠ Vui lòng chọn kích thước trước khi thêm vào giỏ
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
           <input 
@@ -39,7 +82,9 @@ const ProductInfo = ({ product, onBuyNow }) => {
           />
           <button 
             onClick={handleAddToCart}
-            className="flex-1 bg-black text-white py-3 hover:bg-gray-800 transition tracking-widest text-sm font-semibold"
+            disabled={!canAddToCart}
+            title={!canAddToCart ? 'Vui lòng chọn kích thước' : undefined}
+            className="flex-1 bg-black text-white py-3 hover:bg-gray-800 transition tracking-widest text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
           >
             THÊM VÀO GIỎ
           </button>
@@ -51,8 +96,10 @@ const ProductInfo = ({ product, onBuyNow }) => {
           </button>
         </div>
         <button 
-          onClick={onBuyNow}
-          className="w-full border border-black py-3 font-semibold tracking-widest text-sm hover:bg-gray-100 transition"
+          onClick={handleBuyNow}
+          disabled={!canAddToCart}
+          title={!canAddToCart ? 'Vui lòng chọn kích thước' : undefined}
+          className="w-full border border-black py-3 font-semibold tracking-widest text-sm hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
           MUA NGAY
         </button>

@@ -15,7 +15,7 @@ exports.register = async (req, res) => {
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
         res.status(201).json({
             token,
-            user: { _id: user._id, name: user.name, email: user.email, isAdmin: user.isAdmin }
+            user: { _id: user._id, name: user.name, email: user.email, phone: user.phone, isAdmin: user.isAdmin, memberTier: user.memberTier, totalSpent: user.totalSpent, defaultAddress: user.defaultAddress }
         });
     } catch (err) { res.status(400).json({ error: err.message }); }
 };
@@ -29,7 +29,7 @@ exports.login = async (req, res) => {
             const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
             res.json({
                 token,
-                user: { _id: user._id, name: user.name, email: user.email, isAdmin: user.isAdmin }
+                user: { _id: user._id, name: user.name, email: user.email, phone: user.phone, isAdmin: user.isAdmin, memberTier: user.memberTier, totalSpent: user.totalSpent, defaultAddress: user.defaultAddress }
             });
         } else {
             res.status(401).json({ message: "Sai email hoặc mật khẩu" });
@@ -128,9 +128,75 @@ exports.googleAuth = async (req, res) => {
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
         res.json({
             token,
-            user: { _id: user._id, name: user.name, email: user.email, isAdmin: user.isAdmin, avatar: user.avatar }
+            user: { _id: user._id, name: user.name, email: user.email, phone: user.phone, isAdmin: user.isAdmin, avatar: user.avatar, memberTier: user.memberTier, totalSpent: user.totalSpent, defaultAddress: user.defaultAddress }
         });
     } catch (err) {
         res.status(500).json({ message: "Lỗi đăng nhập Google" });
+    }
+};
+
+// Lấy thông tin cá nhân hiện tại
+exports.getProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+        res.json({
+            user: { _id: user._id, name: user.name, email: user.email, phone: user.phone, isAdmin: user.isAdmin, avatar: user.avatar, memberTier: user.memberTier, totalSpent: user.totalSpent, defaultAddress: user.defaultAddress }
+        });
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi server" });
+    }
+};
+
+// Cập nhật thông tin cá nhân
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, phone, defaultAddress } = req.body;
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+        if (name) user.name = name;
+        if (phone !== undefined) user.phone = phone; // cho phép chuỗi rỗng
+        if (defaultAddress) user.defaultAddress = defaultAddress;
+
+        await user.save();
+
+        res.json({
+            message: "Cập nhật thông tin thành công",
+            user: { _id: user._id, name: user.name, email: user.email, phone: user.phone, isAdmin: user.isAdmin, avatar: user.avatar, memberTier: user.memberTier, totalSpent: user.totalSpent, defaultAddress: user.defaultAddress }
+        });
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi server khi cập nhật thông tin" });
+    }
+};
+
+// Đổi mật khẩu
+exports.changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ message: "Vui lòng nhập đầy đủ mật khẩu cũ và mới" });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+        // Kiểm tra xem user đăng nhập bằng Google không có password thì không cho đổi
+        if (!user.password && user.googleId) {
+            return res.status(400).json({ message: "Tài khoản Google không thể đổi mật khẩu tại đây" });
+        }
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Mật khẩu cũ không đúng" });
+        }
+
+        user.password = newPassword;
+        await user.save(); // pre-save hook sẽ tự hash password
+
+        res.json({ message: "Đổi mật khẩu thành công" });
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi server khi đổi mật khẩu" });
     }
 };

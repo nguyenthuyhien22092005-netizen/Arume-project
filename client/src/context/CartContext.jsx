@@ -56,6 +56,7 @@ export const CartProvider = ({ children }) => {
               warnings.push({
                 id: key,
                 name: item.name,
+                selectedSize: item.selectedSize || '',  // composite key cho remove
                 oldPrice: item.price,
                 newPrice: fresh.price,
                 priceChanged,
@@ -69,6 +70,7 @@ export const CartProvider = ({ children }) => {
               ...item,
               price: fresh.price,
               stock: fresh.stock,
+              size: fresh.size,           // giữ danh sách size đồng bộ với DB
               // Nếu số lượng vượt tồn kho, tự động giảm xuống còn max
               quantity: overStock ? fresh.stock : item.quantity,
             };
@@ -106,18 +108,29 @@ export const CartProvider = ({ children }) => {
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId) => {
-    setCartItems(prev => prev.filter(item => (item._id || item.id) !== productId));
-    setSyncWarnings(prev => prev.filter(w => w.id !== productId));
+  const removeFromCart = (productId, selectedSize = null) => {
+    setCartItems(prev => prev.filter(item =>
+      !(
+        (item._id || item.id) === productId &&
+        (selectedSize === null || item.selectedSize === selectedSize)
+      )
+    ));
+    setSyncWarnings(prev => prev.filter(w =>
+      !(
+        w.id === productId &&
+        (selectedSize === null || w.selectedSize === selectedSize)
+      )
+    ));
   };
 
-  const updateQuantity = (productId, newQuantity) => {
+  const updateQuantity = (productId, newQuantity, selectedSize = null) => {
     if (newQuantity < 1) {
-      removeFromCart(productId);
+      removeFromCart(productId, selectedSize);
       return;
     }
     setCartItems(prev => prev.map(item =>
-      (item._id || item.id) === productId
+      (item._id || item.id) === productId &&
+      (selectedSize === null || item.selectedSize === selectedSize)
         ? { ...item, quantity: newQuantity }
         : item
     ));

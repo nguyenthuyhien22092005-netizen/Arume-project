@@ -76,13 +76,20 @@ const OrderSummary = ({ product, cartItems, displayTotal, bankAmount, subtotal, 
   return (
     <div className="bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 p-4 space-y-3">
       {items.map((item, i) => (
-        <div key={i} className="flex gap-3 items-center">
+        <div key={i} className="flex gap-3 items-start">
           <div className="w-12 h-12 bg-[#F4F2EE] dark:bg-gray-700 flex-shrink-0 overflow-hidden">
             <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-gray-800 dark:text-white truncate">{item.name}</p>
-            {item.quantity > 1 && <p className="text-[11px] text-gray-400">×{item.quantity}</p>}
+            <div className="flex flex-wrap gap-x-2 mt-0.5">
+              {item.selectedSize && (
+                <p className="text-[11px] text-[#C9A96E] font-semibold">Size: {item.selectedSize}</p>
+              )}
+              {item.quantity > 1 && (
+                <p className="text-[11px] text-gray-400">×{item.quantity}</p>
+              )}
+            </div>
           </div>
           <span className="text-xs font-semibold text-gray-800 dark:text-white whitespace-nowrap">
             ${(item.price * (item.quantity || 1)).toFixed(2)}
@@ -145,12 +152,12 @@ const CheckoutModal = ({ isOpen, onClose, product, cartTotal }) => {
 
   // Shipping info
   const [ship, setShip] = useState({
-    name: user?.name || '',
-    phone: '',
+    name: user?.defaultAddress?.name || user?.name || '',
+    phone: user?.defaultAddress?.phone || '',
     email: user?.email || '',
-    province: '',
-    district: '',
-    address: '',
+    province: user?.defaultAddress?.province || '',
+    district: user?.defaultAddress?.district || '',
+    address: user?.defaultAddress?.address || '',
     note: '',
   });
   const [shipErrors, setShipErrors] = useState({});
@@ -192,8 +199,18 @@ const CheckoutModal = ({ isOpen, onClose, product, cartTotal }) => {
       setStep(0); setDone(false); setShipErrors({});
       setCouponInput(''); setCouponError(''); setAppliedCoupon(null);
       setCreatedOrder(null);
+      // Reset ship state with latest user data
+      setShip({
+        name: user?.defaultAddress?.name || user?.name || '',
+        phone: user?.defaultAddress?.phone || '',
+        email: user?.email || '',
+        province: user?.defaultAddress?.province || '',
+        district: user?.defaultAddress?.district || '',
+        address: user?.defaultAddress?.address || '',
+        note: '',
+      });
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   if (!isOpen) return null;
   if (!product && (!cartItems || cartItems.length === 0)) return null;

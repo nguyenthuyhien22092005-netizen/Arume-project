@@ -26,12 +26,22 @@ export const ProductCard = ({ product }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Nếu có size → redirect sang trang detail để chọn size
+    if (Array.isArray(product.size) && product.size.length > 0) {
+      navigate(`/product/${product._id || product.id}`);
+      return;
+    }
     addToCart(product);
   };
 
   const handleBuyNow = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Nếu có size → redirect sang trang detail để chọn size
+    if (Array.isArray(product.size) && product.size.length > 0) {
+      navigate(`/product/${product._id || product.id}`);
+      return;
+    }
     addToCart(product);
     navigate(`/product/${product._id || product.id}`);
   };

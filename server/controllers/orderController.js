@@ -80,7 +80,18 @@ exports.createOrder = async (req, res) => {
                     if (previousOrders > 0) newCustomerOk = false;
                 }
 
-                if (isValid && newCustomerOk) {
+                // Kiểm tra hạng thành viên
+                let tierOk = true;
+                if (coupon.requiredTier !== 'ALL') {
+                    // Cần lấy user.memberTier để kiểm tra
+                    const buyer = await User.findById(req.user.id).session(session);
+                    const userTier = buyer ? buyer.memberTier : 'MEMBER';
+                    
+                    if (coupon.requiredTier === 'VIP' && userTier !== 'VIP') tierOk = false;
+                    if (coupon.requiredTier === 'GOLD' && !['GOLD', 'VIP'].includes(userTier)) tierOk = false;
+                }
+
+                if (isValid && newCustomerOk && tierOk) {
                     if (coupon.type === 'percent') {
                         discountAmount = calculatedTotalPrice * (coupon.value / 100);
                         if (coupon.maxDiscount !== null)
@@ -99,6 +110,9 @@ exports.createOrder = async (req, res) => {
                     coupon.usedCount += 1;
                     await coupon.save({ session });
                 } else {
+                    if (!tierOk) {
+                        throw new Error(`Mã giảm giá này chỉ dành cho thành viên hạng ${coupon.requiredTier}`);
+                    }
                     throw new Error('Mã giảm giá không hợp lệ hoặc không đủ điều kiện áp dụng');
                 }
             } else {
@@ -184,6 +198,37 @@ exports.confirmPayment = async (req, res) => {
 
         await order.save();
         res.json({ message: 'Xác nhận thanh toán thành công', order });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Khách hàng tự hủy đơn
+exports.cancelMyOrder = async (req, res) => {
+    try {
+        const order = await Order.findOne({ _id: req.params.id, user: req.user.id });
+        if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+
+        if (order.status !== 'Đang xử lý' && order.status !== 'Chờ thanh toán') {
+            return res.status(400).json({ message: "Không thể hủy đơn hàng ở trạng thái này" });
+        }
+
+        order.status = 'Đã hủy';
+        order.trackingHistory.push({
+            status: 'Đã hủy',
+            description: 'Khách hàng tự hủy đơn',
+            updatedBy: req.user.id
+        });
+        await order.save();
+
+        // Hoàn lại tồn kho
+        for (const item of order.items) {
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock: item.quantity }
+            });
+        }
+
+        res.json({ message: "Đã hủy đơn hàng thành công", order });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

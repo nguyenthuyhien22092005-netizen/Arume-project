@@ -1,11 +1,12 @@
 import React from 'react';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export const WishlistDrawer = () => {
   const { wishlistItems, isWishlistOpen, setIsWishlistOpen, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -45,7 +46,15 @@ export const WishlistDrawer = () => {
                       <p className="text-sm font-medium mt-1 text-gray-600 dark:text-gray-300">${item.price?.toFixed(2)}</p>
                     </div>
                     <button 
-                      onClick={() => addToCart(item, 1)}
+                      onClick={() => {
+                        // Nếu có size → redirect sang trang detail để chọn size
+                        if (Array.isArray(item.size) && item.size.length > 0) {
+                          setIsWishlistOpen(false);
+                          navigate(`/product/${item._id || item.id}`);
+                          return;
+                        }
+                        addToCart(item, 1);
+                      }}
                       className="w-full mt-4 border border-black dark:border-white dark:text-white py-2 text-xs font-semibold tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition"
                     >
                       THÊM VÀO GIỎ

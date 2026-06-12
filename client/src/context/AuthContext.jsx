@@ -17,6 +17,17 @@ export const AuthProvider = ({ children }) => {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // Fetch fresh profile in background to update VIP tier, etc.
+        API.get('/auth/profile').then(res => {
+          if (res.data && res.data.user) {
+            setUser(res.data.user);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+          }
+        }).catch(err => {
+          console.error('Failed to fetch fresh profile:', err);
+        });
+
       } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -61,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

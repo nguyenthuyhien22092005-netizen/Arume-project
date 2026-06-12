@@ -20,6 +20,14 @@ router.post('/reset-password', resetPassword);
 // POST /api/auth/google - Đăng nhập Google
 router.post('/google', googleAuth);
 
+// GET & PUT /api/auth/profile - Thông tin cá nhân
+const { getProfile, updateProfile, changePassword } = require('../controllers/authController');
+router.get('/profile', authMiddleware, getProfile);
+router.put('/profile', authMiddleware, updateProfile);
+
+// PUT /api/auth/change-password - Đổi mật khẩu
+router.put('/change-password', authMiddleware, changePassword);
+
 // GET /api/auth/users - Admin only
 router.get('/users', adminMiddleware, async (req, res) => {
     try {

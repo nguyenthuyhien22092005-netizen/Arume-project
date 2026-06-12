@@ -115,21 +115,26 @@ export const CartDrawer = () => {
               </div>
             ) : (
               cartItems.map(item => (
-                <div key={item._id || item.id} className="flex gap-6 mb-8 bg-white dark:bg-gray-800 p-4 shadow-sm">
+                <div key={`${item._id || item.id}-${item.selectedSize || ''}`} className="flex gap-6 mb-8 bg-white dark:bg-gray-800 p-4 shadow-sm">
                   <img src={item.image} className="w-24 h-24 object-cover" alt={item.name} />
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start">
                         <h3 className="text-base font-serif font-bold dark:text-white">{item.name}</h3>
-                        <button onClick={() => removeFromCart(item._id || item.id)} className="text-gray-400 hover:text-red-500 text-sm">✕</button>
+                        <button onClick={() => removeFromCart(item._id || item.id, item.selectedSize || null)} className="text-gray-400 hover:text-red-500 text-sm">✕</button>
                       </div>
+                      {item.selectedSize && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Kích thước: <span className="font-semibold text-gray-700 dark:text-gray-200">{item.selectedSize}</span>
+                        </p>
+                      )}
                       <p className="text-sm font-medium mt-1 text-gray-600 dark:text-gray-300">${item.price.toFixed(2)}</p>
                     </div>
                     <div className="flex justify-between items-center mt-4">
                       <div className="flex items-center gap-4 border border-gray-200 dark:border-gray-700 px-3 py-1">
-                        <button onClick={() => updateQuantity(item._id || item.id, item.quantity - 1)} className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">-</button>
+                        <button onClick={() => updateQuantity(item._id || item.id, item.quantity - 1, item.selectedSize || null)} className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">-</button>
                         <span className="text-sm font-semibold w-4 text-center dark:text-white">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item._id || item.id, item.quantity + 1)} className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">+</button>
+                        <button onClick={() => updateQuantity(item._id || item.id, item.quantity + 1, item.selectedSize || null)} className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">+</button>
                       </div>
                       <p className="font-semibold dark:text-white">${(item.price * item.quantity).toFixed(2)}</p>
                     </div>

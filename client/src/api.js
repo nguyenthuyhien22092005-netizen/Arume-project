@@ -31,6 +31,7 @@ export const deleteProduct = (id) => API.delete(`/products/${id}`);
 // ── Orders ───────────────────────────────────────────────────────────────────
 export const createOrder = (data) => API.post('/orders', data);
 export const getMyOrders = () => API.get('/orders/myorders');
+export const cancelMyOrder = (id) => API.put(`/orders/${id}/cancel`);
 export const getOrderById = (id) => API.get(`/orders/${id}`);
 export const getAllOrders = (params) => API.get('/orders', { params });
 export const updateOrderStatus = (id, status) => API.put(`/orders/${id}/status`, { status });
@@ -40,7 +41,9 @@ export const loginUser = (data) => API.post('/auth/login', data);
 export const registerUser = (data) => API.post('/auth/register', data);
 export const forgotPassword = (data) => API.post('/auth/forgot-password', data);
 export const resetPassword = (data) => API.post('/auth/reset-password', data);
+export const changePassword = (data) => API.put('/auth/change-password', data);
 export const googleAuth = (data) => API.post('/auth/google', data);
+export const getProfile = () => API.get('/auth/profile');
 export const getUsers = () => API.get('/auth/users');
 export const deleteUser = (id) => API.delete(`/auth/users/${id}`);
 

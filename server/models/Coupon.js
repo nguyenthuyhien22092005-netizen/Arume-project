@@ -22,6 +22,12 @@ const couponSchema = new mongoose.Schema({
 
     newCustomerOnly: { type: Boolean, default: false },
 
+    requiredTier: {
+        type: String,
+        enum: ['ALL', 'GOLD', 'VIP'],
+        default: 'ALL'
+    },
+
     isActive: { type: Boolean, default: true },
 
     description: { type: String, default: '' },

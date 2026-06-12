@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Coupon = require('./models/Coupon');
 
 async function seed() {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB');
     
     const coupons = [
@@ -49,7 +49,21 @@ async function seed() {
             maxDiscount: 30,
             minOrderValue: 0,
             newCustomerOnly: false,
+            requiredTier: 'ALL',
             description: 'Giam 15% toan bo san pham (toi da 30USD)',
+            isActive: true,
+            startDate: null,
+            endDate: null,
+        },
+        {
+            code: 'VIP20',
+            type: 'percent',
+            value: 20,
+            maxDiscount: null,
+            minOrderValue: 0,
+            newCustomerOnly: false,
+            requiredTier: 'VIP',
+            description: 'Giam 20% dac quyen danh rieng cho thanh vien VIP',
             isActive: true,
             startDate: null,
             endDate: null,

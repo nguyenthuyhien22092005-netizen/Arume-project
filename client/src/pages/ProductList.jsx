@@ -36,6 +36,11 @@ const ShopProductCard = ({ product, onBuyNow, compact, onRequireAuth }) => {
 
   const handleBuyNow = (e) => {
     e.preventDefault();
+    // Nếu có size → redirect sang trang detail để chọn size
+    if (Array.isArray(product.size) && product.size.length > 0) {
+      navigate(`/product/${product._id || product.id}`);
+      return;
+    }
     if (!user) { onRequireAuth(); return; }
     onBuyNow(product);
   };
