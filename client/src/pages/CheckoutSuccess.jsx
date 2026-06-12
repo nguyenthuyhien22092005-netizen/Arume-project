@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 
 export const CheckoutSuccess = () => {
   const { clearCart } = useCart();
-  const orderIdRef = useRef('ORD-' + Math.floor(100000 + Math.random() * 900000));
+  const [orderId] = useState(() => 'ORD-' + Math.floor(100000 + Math.random() * 900000));
 
   useEffect(() => {
     clearCart();
@@ -26,7 +26,7 @@ export const CheckoutSuccess = () => {
         
         <div className="bg-white dark:bg-gray-800 p-6 border border-gray-100 dark:border-gray-700 mb-10 text-left">
           <p className="text-sm uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Mã đơn hàng</p>
-          <p className="font-serif italic text-xl dark:text-white">#{orderIdRef.current}</p>
+          <p className="font-serif italic text-xl dark:text-white">#{orderId}</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

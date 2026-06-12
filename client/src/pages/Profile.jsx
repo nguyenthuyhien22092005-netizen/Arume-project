@@ -289,6 +289,7 @@ export const Profile = () => {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [cancelToast, setCancelToast] = useState({ show: false, message: '', type: '' });
+  const [updating, setUpdating] = useState(false);
 
   // State for Change Password
   const [oldPassword, setOldPassword] = useState('');
