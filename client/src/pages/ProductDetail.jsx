@@ -96,7 +96,7 @@ const Gallery = ({ images }) => {
   const prev = () => setActive(i => (i - 1 + images.length) % images.length);
   const next = () => setActive(i => (i + 1) % images.length);
 
-  const fallback = 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&q=80';
+  const fallback = '/assets/images/Adriana Pearl Bracelet 1.webp';
   const handleImgError = (e) => { e.target.src = fallback; };
 
   return (
@@ -234,7 +234,7 @@ export const ProductDetail = () => {
   const isFav = isInWishlist(product._id);
 
   // Build image array: gộp ảnh chính + ảnh phụ, lọc null/rỗng
-  const FALLBACK = 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&q=80';
+  const FALLBACK = '/assets/images/Adriana Pearl Bracelet 1.webp';
   const extraImages = (product.images || []).filter(Boolean);
   const mainImage = product.image || '';
   const allImgs = mainImage

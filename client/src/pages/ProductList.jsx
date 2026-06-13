@@ -275,7 +275,7 @@ export const ProductList = () => {
       {/* Hero Banner */}
       <div className="relative h-[340px] w-full bg-zinc-900 dark:bg-zinc-900 overflow-hidden flex items-center border-b border-zinc-200/30">
         <img
-          src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=1600&q=80"
+          src="/assets/images/banner.jpg"
           alt="Arume Luxury Banner"
           className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity grayscale"
         />
